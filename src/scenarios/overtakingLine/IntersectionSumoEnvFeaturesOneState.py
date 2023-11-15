@@ -31,9 +31,9 @@ class CustomEnv(Env):
 	def __init__(self, render=False):
 		self.action_space = Discrete(3) #Box(low=0, high=1, shape=(2,))# Number of actions
 		self.n_adversaries = 4  # 2 going up and 2 going down
-		self.n_features = 2 # distance to intersection, speed
+		self.n_features = 2 # distance to type_vehicle, speed
 		self.n_features_ego = 2 # line and speed
-		self.lanes = 2
+		self.line_position = 2
 		self.observation_space = Dict({
 						'ego':Box(0,1,shape=(self.n_features_ego,)), \
 						'adversaries':Box(0,1,shape=(self.n_adversaries*self.n_features,)), \
@@ -349,7 +349,7 @@ class CustomEnv(Env):
 		d_exterior = np.sort(d_exterior)
 		d_intirior = np.sort(d_intirior)
 
-		#Get the positive values (closer distances to the intersection)
+		#Get the positive values (closer distances to the type_vehicle)
 		d_exterior = d_exterior[d_exterior>0]
 		d_intirior = d_intirior[d_intirior>0]
 
@@ -442,11 +442,32 @@ class CustomEnv(Env):
 		except:
 			print("-----> Exception: Ego car already exists")
 
+	def _add_adversaries_cars(self, velocity):
+		if self.type_vehicle == 0:
+			if self.line_position != 2:
+				traci.vehicle.addFull(idd, choice(routeOutsido), depart=None, departPos='0', departSpeed='0', departLane='0', typeID=choice(car))
+				traci.vehicle.setSpeedMode(idd, int('101111',2))
+				traci.vehicle.setSpeed(idd, velocity)
+				traci.vehicle.setLaneChangeMode(idd, 0)
+		elif self.type_vehicle == 1:
+			if self.line_position != 2:
+				traci.vehicle.addFull(idd, choice(routeOutsido), depart=None, departPos='0', departSpeed='0', departLane='0', typeID='vType2')
+				traci.vehicle.setSpeedMode(idd, int('101111',2))
+				traci.vehicle.setSpeed(idd, velocity)
+				traci.vehicle.setLaneChangeMode(idd, 0)
+		elif self.type_vehicle == 2:
+			if self.line_position != 2:
+				traci.vehicle.addFull(idd, choice(routeOutsido), depart=None, departPos='0', departSpeed='0', departLane='0', typeID='vType3')
+				traci.vehicle.setSpeedMode(idd, int('101111',2))
+				traci.vehicle.setSpeed(idd, velocity)
+				traci.vehicle.setLaneChangeMode(idd, 0)
+
+
 	def _addCar(self):
 		max_cars = 7
 		car = ["vType1", "vType2", "vType3", "vType4", "vType5"]
-		routeInside = ["rt1", "rt2", "rt3", "rt4", "rt5", "rt6"]
-		routeOutsido = ["rt91", "rt92", "rt93", "rt94", "rt95", "rt96", "rt97"]
+		routeInside = ["rtI1", "rtI2", "rtI3", "rtI4", "rtI5", "rtI6"]
+		routeOutsido = ["rtO1", "rtO2", "rtO3", "rtO4", "rtO5", "rtO6", "rtO7"]
 		iterador = 0
 		for id in traci.vehicle.getIDList():
 			if id == self.egoCarID:
@@ -460,44 +481,32 @@ class CustomEnv(Env):
 			
 			if self.spawn_cars >= max_cars or len(traci.vehicle.getIDList()) >= max_cars:
 				break 
-			self.lanes = randint(1,2)
-			if self.lanes == 2:
+			self.line_position = randint(1,2)
+			if self.line_position == 2:
 				idu = str(uuid.uuid4()) + "inside"
 			idd = str(uuid.uuid4()) + "outside"
-			self.intersection = randint(0,2)
-			if self.intersection == 0:
-				if self.lanes == 2:
+			self.type_vehicle = randint(0,2)
+			#add adversary cars
+			#self._add_adversaries_cars(0.00001)
+			if self.type_vehicle == 0:
+				if self.line_position == 2:
 					traci.vehicle.addFull(idu, choice(routeInside), depart=None, departPos='0', departSpeed='0', departLane='0', typeID=choice(car))
 					traci.vehicle.setSpeedMode(idu, int('101111',2))
 					traci.vehicle.setSpeed(idu, 0.00001)
 					traci.vehicle.setLaneChangeMode(idu, 0)
-				'''else:
-					traci.vehicle.addFull(idd, choice(routeOutsido), depart=None, departPos='0', departSpeed='0', departLane='0', typeID=choice(car))
-					traci.vehicle.setSpeedMode(idd, int('101111',2))
-					traci.vehicle.setSpeed(idd, 1)
-					traci.vehicle.setLaneChangeMode(idd, 0)'''
-			elif self.intersection == 1:
-				if self.lanes == 2:
+			elif self.type_vehicle == 1:
+				if self.line_position == 2:
 					traci.vehicle.addFull(idu, choice(routeInside), depart=None, departPos='0', departSpeed='0', departLane='0', typeID='vType2')
 					traci.vehicle.setSpeedMode(idu, int('101111',2))
 					traci.vehicle.setSpeed(idu, 0.00001)
 					traci.vehicle.setLaneChangeMode(idu, 0)
-				'''else:
-					traci.vehicle.addFull(idd, choice(routeOutsido), depart=None, departPos='0', departSpeed='0', departLane='0', typeID='vType2')
-					traci.vehicle.setSpeedMode(idd, int('101111',2))
-					traci.vehicle.setSpeed(idd, 1)
-					traci.vehicle.setLaneChangeMode(idd, 0)'''
-			elif self.intersection == 2:
-				if self.lanes == 2:
+			elif self.type_vehicle == 2:
+				if self.line_position == 2:
 					traci.vehicle.addFull(idu, choice(routeInside), depart=None, departPos='0', departSpeed='0', departLane='0', typeID='vType3')
 					traci.vehicle.setSpeedMode(idu, int('110111',2))
 					traci.vehicle.setSpeed(idu, 0.00001)
 					traci.vehicle.setLaneChangeMode(idu, 0)
-				'''else:
-					traci.vehicle.addFull(idd, choice(routeOutsido), depart=None, departPos='0', departSpeed='0', departLane='0', typeID='vType3')
-					traci.vehicle.setSpeedMode(idd, int('110111',2))
-					traci.vehicle.setSpeed(idd, 1)
-					traci.vehicle.setLaneChangeMode(idd, 0)'''
+
 			self.spawn_cars += 1
 			if  self.spawn_cars >= max_cars or len(traci.vehicle.getIDList()) >= max_cars:
 				break 
