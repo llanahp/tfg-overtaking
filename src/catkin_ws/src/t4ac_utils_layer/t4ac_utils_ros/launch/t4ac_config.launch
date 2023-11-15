@@ -1,0 +1,171 @@
+<launch>
+	<!-- CARLA Challenge 2021 configuration -->
+	<!-- Global config -->
+
+		<!-- Arguments -->
+
+		<arg name="simulation" default="true"/>
+		<arg name="map_name" default="Town04"/>  <!-- CampusUAH_v1_7    Town03 -->
+		<arg name="rviz" default="true"/> <!-- false when submitting the image to AlphaDrive server -->
+
+		<arg name="mapping" default="true"/> <!-- false when submitting the image to AlphaDrive server -->
+		<arg name="localization" default="true"/>  
+		<arg name="planning" default="true"/> 
+		<arg name="control" default="true"/>
+		<arg name="perception" default="false"/>
+		<arg name="decision_making" default="false"/>
+
+		<arg name="localization_test" default="false"/>  <!-- Always with localization=false -->
+		
+		<arg name="rc_max" default="40"/>
+		<arg name="v_max" default="8.33"/>
+
+		<!-- Vehicle parameters -->
+
+		<!-- CARLA Challenge ego-vehicle = Lincoln MKZ 2017 -->
+		<!-- https://media.lincoln.com/content/dam/lincolnmedia/lna/us/product/2016/17MKZ-TechSpecs.pdf -->
+		<!-- From Inches to meters = (* 2.54 / 100) -->
+		<!-- From lb.-ft to Nm (torque) = *1.353 -->
+		<arg name="vehicle_length" default="3.826"/>
+		<arg name="vehicle_wheelbase" default="2.405"/>
+		<arg name="vehicle_dist_to_front_bumper_center" default="$(eval 0.5 * arg('vehicle_length'))"/>
+		<arg name="vehicle_dist_to_front_axis_center" default="$(eval 0.5 * arg('vehicle_wheelbase'))"/>
+
+		<arg name="t4ac_vehicle_parameters" value="/t4ac/vehicle_parameters"/>
+		<group ns="$(arg t4ac_vehicle_parameters)">
+			<param name="length" 			    type="double" 	value="$(arg vehicle_length)"/> <!-- [m] -->
+			<param name="width" 			    type="double" 	value="2.113"/> <!-- [m]. Including mirrors -->
+			<param name="height" 			    type="double" 	value="1.476"/> <!-- [m] -->
+			<param name="dist_to_front"			type="double"	value="$(arg vehicle_dist_to_front_bumper_center)"/>   <!-- [m]. Length/2, assuming the geometric center matches the mass center -->
+			<param name="wheelbase" 			type="double" 	value="$(arg vehicle_wheelbase)"/> <!-- [m] -->
+			<param name="wheel_radius" 			type="double" 	value="0.291"/> <!-- [m] -->
+			<param name="track_front"			type="double" 	value="1.574"/> <!-- [m] -->
+			<param name="track_rear"			type="double" 	value="1.602"/> <!-- [m] -->
+			<param name="max_steering_angle" 	type="double"	value="-1"/> <!-- NOT FOUND-->  
+			<param name="max_heading_angle" 	type="double"	value="-1"/> <!-- NOT FOUND-->
+			<param name="max_motor_torque" 	    type="double"	value="372.85"/> <!-- [Nm]-->     
+		</group>
+
+		<!-- Map parameters -->
+
+		<arg name="t4ac_map_parameters" value="/t4ac/map_parameters"/>
+		<group ns="$(arg t4ac_map_parameters)">
+			<param name="lat_origin"                     type="double"   value="40.5126566"/>
+			<param name="lon_origin"		             type="double" 	 value="-3.34460735"/>
+			<param name="map_data" 		                 type="string" 	 value="default_data"/>
+			<param name="map_name" 		                 type="string" 	 value="$(arg map_name)"/>
+			<param name="distance_among_waypoints"		 type="double" 	 value="1.0"/>
+			<param name="maps/xodr"                      type="string"   value="/workspace/team_code/catkin_ws/src/t4ac_mapping/maps/xodr/carla_0910/"/>    
+		</group>
+
+		<!-- Frames -->
+
+		<arg name="world_frame" default="world"/>
+		<arg name="map_frame" default="map"/>
+		<arg name="base_link_frame" default="ego_vehicle"/>
+
+		<arg name="t4ac_frames" value="/t4ac/frames"/>
+		<group ns="$(arg t4ac_frames)">
+			<param name="world"               type="string"   value="$(arg world_frame)"/>
+			<param name="map"                 type="string"   value="$(arg map_frame)"/>
+			<param name="base_link"           type="string"   value="$(arg base_link_frame)"/> <!-- ego_vehicle represents rear_axis_center -->
+			<param name="lidar"               type="string"   value="$(arg base_link_frame)/lidar"/>
+			<param name="camera"       		  type="string"   value="$(arg base_link_frame)/camera"/>
+			<param name="gnss"                type="string"   value="$(arg base_link_frame)/gnss"/>
+			<param name="front_axis_center"   type="string"   value="$(arg base_link_frame)/front_axis_center"/> 
+			<param name="front_bumper_center" type="string"   value="$(arg base_link_frame)/front_bumper_center"/>
+		</group>
+
+		<!-- Transforms -->
+
+		<arg name="yaw_center" default="0"/> <!-- Yaw with respect to camera center orientation (z axis points forward) -->
+		<arg name="yaw_tf_center" default="$(eval -1.57079632679 - ((arg('yaw_center') * 1.57079632679) / 90))"/>
+
+		<arg name="t4ac_transforms" value="/t4ac/tf"/>
+		<group ns="$(arg t4ac_transforms)">
+			<!-- TF: x,y,z (trans), roll,pitch,yaw (rot)  -->
+
+			<rosparam param="world_to_map_tf">[0,0,0,0,0,0]</rosparam> 
+			
+			<!-- From map to base_link, it is published by the localization algorithm (e.g. EKF) -->
+
+			<rosparam param="base_link_to_lidar_tf">[0,0,2.2,0,0,0]</rosparam>
+			<rosparam param="base_link_to_camera_tf" subst_value="True">[0.0,0,1.65,-1.57079632679,0, $(arg yaw_tf_center)]</rosparam>
+			<rosparam param="base_link_to_gnss_tf">[0.0,0,1.8,0,0,0]</rosparam>
+			<rosparam param="base_link_to_front_axis_center_tf" subst_value="True">[$(arg vehicle_dist_to_front_axis_center),0,0.317,0,0,0]</rosparam>  
+			<rosparam param="base_link_to_front_bumper_center_tf" subst_value="True">[$(arg vehicle_dist_to_front_bumper_center),0,0.634,0,0,0]</rosparam>
+		</group>
+
+	<!-- End Global config -->
+
+	<!-- RVIZ config -->
+		<group if="$(eval rviz == true)">
+			<include file="$(find t4ac_viz_ros)/launch/t4ac_rviz.launch"> 
+				<arg name="simulation" value='$(arg simulation)'/>
+			</include>
+			<include file="$(find t4ac_utils_ros)/launch/t4ac_viewer.launch"> 
+			</include>
+		</group>
+
+	<!-- T4AC layers -->
+		<!-- Mapping layer -->
+
+		<group if="$(eval mapping == true)">
+			<include file="$(find t4ac_map_monitor_ros)/launch/mapping.launch"> 
+				<arg name='map_name' value='$(arg map_name)'/>
+			</include>
+		</group>
+m
+		<!-- Localization layer -->
+
+		<group if="$(eval localization == true)">
+			<include file="$(find t4ac_localization)/launch/t4ac_carla_localization.launch"/>
+		</group>
+
+		<group if="$(eval localization_test == true)">
+			<include file="$(find t4ac_localization)/launch/t4ac_rviz_localization.launch">
+				<arg name="world_frame" value='$(arg world_frame)'/>
+				<arg name="map_frame" value='$(arg map_frame)'/>
+				<arg name="base_link_frame" value='$(arg base_link_frame)'/>
+				<arg name="map_name" value='$(arg map_name)'/>
+			</include>
+		</group>
+
+		<!-- Planning layer -->
+
+		<group if="$(eval planning == true)">
+			<include file="$(find t4ac_global_planner_ros)/launch/planning.launch"> 
+				<arg name='map_name' value='$(arg map_name)'/>
+				<arg name='visualization' value='true'/>
+			</include>
+		</group>
+
+		<!-- Control layer -->
+
+		<group if="$(eval control == true)">
+			<arg name="t4ac_control_parameters" value="/t4ac/control"/>
+			<group ns="$(arg t4ac_control_parameters)">
+				<param name="rc_max"    type="double"   value="$(arg rc_max)"/>
+				<param name="v_max"		type="double" 	value="$(arg v_max)" />   
+			</group>
+			<include file="$(find t4ac_lqr_ros)/launch/t4ac_lqr_ros.launch">
+			</include>
+		</group>
+
+		<!-- Perception layer -->
+
+		<group if="$(eval perception == true)">
+			<include file="$(find t4ac_unified_perception_layer)/launch/t4ac_perception_layer.launch"/>
+		</group>
+
+
+		<!-- Decision-Making layer -->
+
+		<group if="$(eval decision_making == true)">
+			<include file="$(find t4ac_petrinets_ros)/launch/t4ac_petrinets_ros.launch"/>
+		</group>
+
+	
+	<!-- End T4AC layers -->
+
+</launch>

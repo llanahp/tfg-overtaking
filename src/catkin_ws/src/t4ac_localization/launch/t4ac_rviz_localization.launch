@@ -1,0 +1,62 @@
+<!-- http://docs.ros.org/melodic/api/robot_localization/html/index.html -->
+
+<launch>
+	<!-- ******************************** GLOBAL PARAMETERS ****************************** -->
+	<!-- Frames -->
+	<arg name="world_frame" default="world"/>
+	<arg name="map_frame" default="map"/>
+	<arg name="base_link_frame" default="ego_vehicle"/>
+	<arg name="map_name" default="Town03"/>
+
+	<arg name="t4ac_frames" value="/t4ac/frames"/>
+	<group ns="$(arg t4ac_frames)">
+		<param name="world"               type="string"   value="$(arg world_frame)"/>
+		<param name="map"                 type="string"   value="$(arg map_frame)"/>
+		<param name="base_link"           type="string"   value="$(arg base_link_frame)"/> <!-- ego_vehicle represents rear_axis_center -->
+		<param name="lidar"               type="string"   value="$(arg base_link_frame)/lidar"/>
+		<param name="camera"       type="string"   value="$(arg base_link_frame)/camera"/>
+		<param name="radar"               type="string"   value="$(arg base_link_frame)/radar"/>
+		<param name="gnss"                type="string"   value="$(arg base_link_frame)/gnss"/>
+		<param name="front_axis_center"   type="string"   value="$(arg base_link_frame)/front_axis_center"/> 
+		<param name="front_bumper_center" type="string"   value="$(arg base_link_frame)/front_bumper_center"/>
+	</group>
+
+	<!-- Transforms -->
+	<arg name="t4ac_transforms" value="/t4ac/tf"/>
+	<group ns="$(arg t4ac_transforms)">
+		<!-- TF: x,y,z (trans), roll,pitch,yaw (rot)  -->
+		<rosparam param="world_to_map_tf">[0,0,0,0,0,0]</rosparam> 
+		<!-- From map to base_link, it is published by the localization algorithm (e.g. EKF) -->
+		<rosparam param="base_link_to_lidar_tf">[0,0,2.2,0,0,0]</rosparam>
+		<rosparam param="base_link_to_camera_tf">[0.0,0,1.5,-1.57079632679,0,-1.57079632679]</rosparam>
+		<rosparam param="base_link_to_radar_tf">[3.0,0,0.5,0,0,0]</rosparam>
+		<rosparam param="base_link_to_gnss_tf">[0.0,0,1.75,0,0,0]</rosparam>
+		<rosparam param="base_link_to_front_axis_center_tf">[2.5,0,0,0,0,0]</rosparam>
+		<rosparam param="base_link_to_front_bumper_center_tf">[3,0,0,0,0,0]</rosparam>
+	</group>	
+
+	<group if="$(eval map_name == 'Town03')">
+		<!-- <rosparam param="t4ac_pose_rviz_publisher_node/initial_pose">[210.00, -58.5, 0.28, 0, 0, 180]</rosparam> -->
+		<rosparam param="t4ac_pose_rviz_publisher_node/initial_pose">[192.5, -62.5, 0.28, 0, 0, 0]</rosparam>
+	</group>	
+	<group if="$(eval map_name == 'CampusUAH_v1_7')">
+		<rosparam param="t4ac_pose_rviz_publisher_node/initial_pose">[206.7, 93.3, 0.28, 0, 0, 107]</rosparam>
+	</group>
+
+	<!-- ******************************** END GLOBAL PARAMETERS ****************************** -->  
+
+	<!-- ******************************** RUNNING NODES ****************************** -->  
+	<node pkg="t4ac_localization" type="t4ac_pose_rviz_publisher_node" name="t4ac_pose_rviz_publisher_node" output="screen">    
+		<param name="frequency" type="double" value="10"/>
+		<!-- PUBLISHERS -->
+		<remap from="/t4ac/localization/pose" to="/t4ac/localization/pose"/>
+		<!-- SUBSCRIBERS -->
+		<remap from="/t4ac/localization/pose_rviz" to="/t4ac/localization/pose_rviz"/>
+	</node> 	
+
+	<node pkg="t4ac_localization" type="t4ac_tf_broadcaster_node" name="t4ac_tf_broadcaster_node"/>    
+	<!-- ******************************** END RUNNING NODES ****************************** -->  
+
+   <arg name="stdout" default="screen" />
+  
+ </launch>

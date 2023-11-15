@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="simulation" default="true"/>
+
+    <group if="$(eval simulation == true)">
+        <node name="gui_visual" pkg="rviz" type="rviz" args="-d $(find t4ac_viz_ros)/config/rviz/t4ac_simulation.rviz"/>
+        <param name="robot_description" textfile="$(find t4ac_viz_ros)/config/urdf/t4ac_simulation.urdf"/>
+    </group>
+
+    <group if="$(eval simulation == false)">
+        <node name="gui_visual" pkg="rviz" type="rviz" args="-d $(find t4ac_viz_ros)/config/rviz/t4ac_real.rviz"/>
+        <param name="robot_description" textfile="$(find t4ac_viz_ros)/config/urdf/t4ac_real.urdf"/>
+    </group>
+</launch>

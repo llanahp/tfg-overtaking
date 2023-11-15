@@ -1,0 +1,382 @@
+Panels:
+  - Class: rviz/Displays
+    Help Height: 0
+    Name: Displays
+    Property Tree Widget:
+      Expanded:
+        - /Pose1
+        - /Pose2
+      Splitter Ratio: 0.5089285969734192
+    Tree Height: 835
+  - Class: rviz/Selection
+    Name: Selection
+  - Class: rviz/Tool Properties
+    Expanded:
+      - /2D Pose Estimate1
+      - /2D Nav Goal1
+      - /Publish Point1
+    Name: Tool Properties
+    Splitter Ratio: 0.5886790156364441
+  - Class: rviz/Views
+    Expanded:
+      - /Current View1
+    Name: Views
+    Splitter Ratio: 0.5
+  - Class: rviz/Time
+    Name: Time
+    SyncMode: 0
+    SyncSource: ""
+Preferences:
+  PromptSaveOnExit: true
+Toolbars:
+  toolButtonStyle: 2
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Alpha: 0.5
+      Cell Size: 1
+      Class: rviz/Grid
+      Color: 160; 160; 164
+      Enabled: false
+      Line Style:
+        Line Width: 0.029999999329447746
+        Value: Lines
+      Name: Grid
+      Normal Cell Count: 0
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Plane: XY
+      Plane Cell Count: 10
+      Reference Frame: <Fixed Frame>
+      Value: false
+    - Alpha: 1
+      Class: rviz/RobotModel
+      Collision Enabled: false
+      Enabled: true
+      Links:
+        All Links Enabled: true
+        Expand Joint Details: false
+        Expand Link Details: false
+        Expand Tree: false
+        Link Tree Style: Links in Alphabetic Order
+        ego_vehicle:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+      Name: Ego_Vehicle
+      Robot Description: robot_description
+      TF Prefix: ""
+      Update Interval: 0
+      Value: true
+      Visual Enabled: true
+    - Class: rviz/TF
+      Enabled: true
+      Frame Timeout: 15
+      Frames:
+        All Enabled: true
+        ego_vehicle:
+          Value: true
+        ego_vehicle/camera:
+          Value: true
+        ego_vehicle/front_axis_center:
+          Value: true
+        ego_vehicle/front_bumper_center:
+          Value: true
+        ego_vehicle/gnss:
+          Value: true
+        ego_vehicle/lidar:
+          Value: true
+        map:
+          Value: true
+        world:
+          Value: true
+      Marker Alpha: 1
+      Marker Scale: 1
+      Name: TF
+      Show Arrows: true
+      Show Axes: true
+      Show Names: true
+      Tree:
+        world:
+          map:
+            ego_vehicle:
+              ego_vehicle/camera:
+                {}
+              ego_vehicle/front_axis_center:
+                {}
+              ego_vehicle/front_bumper_center:
+                {}
+              ego_vehicle/gnss:
+                {}
+              ego_vehicle/lidar:
+                {}
+      Update Interval: 0
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /t4ac/mapping/map/lanes_marker
+      Name: Map
+      Namespaces:
+        map_visualizator_lanes: true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Image
+      Enabled: false
+      Image Topic: /t4ac/perception/camera
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
+      Name: Camera
+      Normalize Range: true
+      Queue Size: 2
+      Transport Hint: raw
+      Unreliable: false
+      Value: false
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/PointCloud2
+      Color: 255; 255; 255
+      Color Transformer: Intensity
+      Decay Time: 0
+      Enabled: true
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Min Color: 0; 0; 0
+      Name: Lidar
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.05000000074505806
+      Style: Flat Squares
+      Topic: /t4ac/perception/lidar
+      Unreliable: false
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: true
+    - Class: rviz/Marker
+      Enabled: false
+      Marker Topic: /t4ac/planning/visualization/route
+      Name: Global Route
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: false
+    - Class: rviz/Image
+      Enabled: false
+      Image Topic: /t4ac/perception/YOLO_output_image
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
+      Name: YOLO
+      Normalize Range: true
+      Queue Size: 2
+      Transport Hint: raw
+      Unreliable: false
+      Value: false
+    - Align Bottom: false
+      Background Alpha: 0.800000011920929
+      Background Color: 0; 0; 0
+      Class: jsk_rviz_plugin/OverlayText
+      Enabled: true
+      Foreground Alpha: 0.800000011920929
+      Foreground Color: 25; 255; 240
+      Invert Shadow: false
+      Name: OverlayText
+      Overtake BG Color Properties: false
+      Overtake FG Color Properties: false
+      Overtake Position Properties: false
+      Topic: /t4ac/utils/status
+      Value: true
+      font: DejaVu Sans Mono
+      height: 128
+      left: 0
+      line width: 2
+      text size: 12
+      top: 0
+      width: 128
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /t4ac/mapping/map/reg_elements_marker
+      Name: Global_reg_elemts
+      Namespaces:
+        Crosswalk: true
+        Stop: true
+        TrafficLight: true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /t4ac/perception/3D_camera_obstacles_markers
+      Name: Obstacles
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /t4ac/mapping/monitor/intersections_marker
+      Name: Intersections
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /t4ac/mapping/monitor/lanes_marker
+      Name: Lanes
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /t4ac/mapping/monitor/regElems_marker
+      Name: Reg_elemts
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: false
+      Marker Topic: /t4ac/control/tactical_trayectory
+      Name: MarkerArray
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: false
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 25; 255; 0
+      Enabled: true
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
+      Line Style: Lines
+      Line Width: 0.029999999329447746
+      Name: Path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Queue Size: 10
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
+      Topic: /t4ac/control/spline
+      Unreliable: false
+      Value: true
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.10000000149011612
+      Class: rviz/Pose
+      Color: 255; 0; 127
+      Enabled: true
+      Head Length: 0.5
+      Head Radius: 0.20000000298023224
+      Name: Pose
+      Queue Size: 10
+      Shaft Length: 2
+      Shaft Radius: 0.10000000149011612
+      Shape: Arrow
+      Topic: /t4ac/control/predicted_pose
+      Unreliable: false
+      Value: true
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.10000000149011612
+      Class: rviz/Pose
+      Color: 0; 0; 255
+      Enabled: true
+      Head Length: 0.5
+      Head Radius: 0.20000000298023224
+      Name: Pose
+      Queue Size: 10
+      Shaft Length: 2
+      Shaft Radius: 0.10000000149011612
+      Shape: Arrow
+      Topic: /t4ac/control/reference_pose
+      Unreliable: false
+      Value: true
+  Enabled: true
+  Global Options:
+    Background Color: 48; 48; 48
+    Default Light: true
+    Fixed Frame: map
+    Frame Rate: 30
+  Name: root
+  Tools:
+    - Class: rviz/Interact
+      Hide Inactive Objects: true
+    - Class: rviz/MoveCamera
+    - Class: rviz/Select
+    - Class: rviz/FocusCamera
+    - Class: rviz/Measure
+    - Class: rviz/SetInitialPose
+      Theta std deviation: 0.2617993950843811
+      Topic: /t4ac/localization/pose_rviz
+      X std deviation: 0.5
+      Y std deviation: 0.5
+    - Class: rviz/SetGoal
+      Topic: /t4ac/planning/goal
+    - Class: rviz/PublishPoint
+      Single click: true
+      Topic: /clicked_point
+  Value: true
+  Views:
+    Current:
+      Class: rviz/Orbit
+      Distance: 39.157005310058594
+      Enable Stereo Rendering:
+        Stereo Eye Separation: 0.05999999865889549
+        Stereo Focal Distance: 1
+        Swap Stereo Eyes: false
+        Value: false
+      Field of View: 0.7853981852531433
+      Focal Point:
+        X: 0.13307344913482666
+        Y: -3.2468578815460205
+        Z: 12.241796493530273
+      Focal Shape Fixed Size: false
+      Focal Shape Size: 0.05000000074505806
+      Invert Z Axis: false
+      Name: Current View
+      Near Clip Distance: 0.009999999776482582
+      Pitch: 0.36039817333221436
+      Target Frame: ego_vehicle
+      Yaw: 1.5503984689712524
+    Saved: ~
+Window Geometry:
+  Camera:
+    collapsed: false
+  Displays:
+    collapsed: false
+  Height: 1043
+  Hide Left Dock: false
+  Hide Right Dock: true
+  QMainWindow State: 000000ff00000000fd00000004000000000000036a0000037efc0200000025fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003b0000037e000000c700fffffffc0000020e000001b40000000000fffffffa000000000100000002fb0000002400320044005f0044006500740065006300740069006f006e005f0049006d0061006700650000000000ffffffff0000000000000000fb00000026004f00750074007000750074005f0069006d006100670065005f00630065006e0074006500720200000053000002b1000002800000012bfb0000002a00560065006c006f003200630061006d005f0069006d006100670065005f00630065006e00740065007200000001c0000000c10000000000000000fb00000022004f00750074007000750074005f0069006d006100670065005f006c0065006600740000000155000000c70000000000000000fb0000002c00460072006f006e0074005f00430061006d006500720061005f00440065007000740068005f004d00610070000000013e000000a70000000000000000fb0000002e00460072006f006e0074005f00430061006d006500720061005f0044006500740065006300740069006f006e00730000000195000000de0000000000000000fb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000001800460072006f006e0074005f00430061006d0065007200610000000192000001060000000000000000fb0000002e00460072006f006e0074005f00430061006d006500720061005f0044006500740065006300740069006f006e007300000001e3000000a50000000000000000fb0000000a0049006d00610067006502000003ef0000007000000280000001e0fb0000001e0054006f006f006c002000500072006f007000650072007400690065007300000002f7000000ab0000000000000000fb0000001e00530074006100720074004e0061007600690067006100740069006f006e00000002f7000000650000000000000000fb0000001e00530074006100720074004e0061007600690067006100740069006f006e0000000359000000490000000000000000fb0000001e00530074006100720074004e0061007600690067006100740069006f006e00000001af0000007d0000000000000000fb000000200049006d006100670065005f0064006500740065006300740069006f006e007300000002ac000001110000000000000000fb0000000a0049006d0061006700650000000232000000bc0000000000000000fb0000000a0049006d0061006700650100000232000000bc0000000000000000fb00000024004f00750074007000750074005f0069006d006100670065005f0072006900670068007400000002ac000000f60000000000000000fb0000001000560065006c006f003200630061006d00000002da000000c80000000000000000fb0000000a0049006d00610067006503000004e3000000dc000002430000019ffb0000000a0049006d00610067006501000002da000000c80000000000000000fb000000180049006d006100670065005f00630065006e00740065007200000002da000000c80000000000000000fb000000220049006d006100630065005f0072006500630074005f00630065006e007400650072000000020e0000008a0000000000000000fb000000220049006d006100670065005f0072006500630074005f00630065006e00740065007200000002f0000000b50000000000000000fb000000220049006d006100670065005f0072006500630074005f00630065006e00740065007200000001e2000000b50000000000000000fb00000026004f00750074007000750074005f0069006d006100670065005f00630065006e00740065007201000002550000014d0000000000000000fb00000028005200650063007400690066006900650064005f00440065006d006f005f0069006d00610067006500000002dd000000c80000000000000000fb0000000c00430061006d00650072006100000001680000014b0000001600fffffffb0000000c00430061006d00650072006100000001ca000000e10000000000000000fb0000000a0049006d00610067006501000001ff000001770000000000000000fb000000080059004f004c004f000000021d0000019a0000001600ffffff00000001000001000000037efc0200000002fb0000000a00560069006500770073000000003b0000037e000000a000fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000073800000039fc0100000002fb0000000800540069006d00650100000000000007380000030700fffffffb0000000800540069006d00650100000000000004500000000000000000000003c80000037e00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  Selection:
+    collapsed: false
+  Time:
+    collapsed: false
+  Tool Properties:
+    collapsed: false
+  Views:
+    collapsed: true
+  Width: 1848
+  X: 1992
+  Y: 0
+  YOLO:
+    collapsed: false
