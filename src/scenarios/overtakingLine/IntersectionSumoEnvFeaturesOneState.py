@@ -466,7 +466,7 @@ class CustomEnv(Env):
 	def _addCar(self):
 		max_cars = 7
 		car = ["vType1", "vType2", "vType3", "vType4", "vType5"]
-		routeInside = ["rtI1", "rtI2", "rtI3", "rtI4", "rtI5", "rtI6"]
+		routeInside = ["rt1", "rt2", "rt3", "rt4", "rt5", "rt6"]
 		routeOutsido = ["rtO1", "rtO2", "rtO3", "rtO4", "rtO5", "rtO6", "rtO7"]
 		iterador = 0
 		for id in traci.vehicle.getIDList():
