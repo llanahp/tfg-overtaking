@@ -48,7 +48,7 @@ class CustomEnv(Env):
 		sumoCmd = [
 			sumo,
 			"-c",
-			"scenarios/overtaking/sumo_config/overtaking.sumocfg",
+			"scenarios/overtakingLine/sumo_config/overtaking.sumocfg",
 			"--step-length",
 			str(self.timestep),
 			"--collision.action",
@@ -160,6 +160,7 @@ class CustomEnv(Env):
 				done = False
 				break
 		
+	
 		reward = 0
 	
 		if not done:
@@ -265,6 +266,8 @@ class CustomEnv(Env):
 		y_ego , x_ego = self._get_coords_ego()
 		if x_ego <= -100 and y_ego <= -95:
 			return True
+		'''if x_ego <= -98 and y_ego <= -95:
+			return True'''
 		return False
 
 	def _obs(self):
@@ -487,24 +490,24 @@ class CustomEnv(Env):
 			idd = str(uuid.uuid4()) + "outside"
 			self.type_vehicle = randint(0,2)
 			#add adversary cars
-			#self._add_adversaries_cars(0.00001)
+			#self._add_adversaries_cars(2)
 			if self.type_vehicle == 0:
 				if self.line_position == 2:
 					traci.vehicle.addFull(idu, choice(routeInside), depart=None, departPos='0', departSpeed='0', departLane='0', typeID=choice(car))
 					traci.vehicle.setSpeedMode(idu, int('101111',2))
-					traci.vehicle.setSpeed(idu, 0.00001)
+					traci.vehicle.setSpeed(idu, 0.0001)
 					traci.vehicle.setLaneChangeMode(idu, 0)
 			elif self.type_vehicle == 1:
 				if self.line_position == 2:
 					traci.vehicle.addFull(idu, choice(routeInside), depart=None, departPos='0', departSpeed='0', departLane='0', typeID='vType2')
 					traci.vehicle.setSpeedMode(idu, int('101111',2))
-					traci.vehicle.setSpeed(idu, 0.00001)
+					traci.vehicle.setSpeed(idu, 0.0001)
 					traci.vehicle.setLaneChangeMode(idu, 0)
 			elif self.type_vehicle == 2:
 				if self.line_position == 2:
 					traci.vehicle.addFull(idu, choice(routeInside), depart=None, departPos='0', departSpeed='0', departLane='0', typeID='vType3')
 					traci.vehicle.setSpeedMode(idu, int('110111',2))
-					traci.vehicle.setSpeed(idu, 0.00001)
+					traci.vehicle.setSpeed(idu, 0.0001)
 					traci.vehicle.setLaneChangeMode(idu, 0)
 
 			self.spawn_cars += 1

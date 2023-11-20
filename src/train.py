@@ -161,7 +161,7 @@ def createEnv(args, model_dir):
 		if (args.model == "PPO"):
 			policy_kwargs = dict(
 			features_extractor_class=CustomCombinedExtractorOneState,
-			net_arch = dict(pi=[128, 128], vf=[128, 128])
+			net_arch = dict(pi=[256, 256], vf=[256, 256])
 			)
 		elif (args.model == "SAC"):
 			policy_kwargs = dict(
