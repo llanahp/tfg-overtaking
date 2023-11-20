@@ -445,7 +445,9 @@ class CustomEnv(Env):
 		except:
 			print("-----> Exception: Ego car already exists")
 
-	def _add_adversaries_cars(self, velocity):
+	def _add_adversaries_cars(self, velocity, idd):
+		car = ["vType1", "vType2", "vType3", "vType4", "vType5"]
+		routeOutsido = ["rt10", "rt11", "rt12", "rt13", "rt14", "rt15", "rt16", "rt17", "rt18"]
 		if self.type_vehicle == 0:
 			if self.line_position != 2:
 				traci.vehicle.addFull(idd, choice(routeOutsido), depart=None, departPos='0', departSpeed='0', departLane='0', typeID=choice(car))
@@ -467,10 +469,10 @@ class CustomEnv(Env):
 
 
 	def _addCar(self):
-		max_cars = 7
+		max_cars = 4
 		car = ["vType1", "vType2", "vType3", "vType4", "vType5"]
-		routeInside = ["rt1", "rt2", "rt3", "rt4", "rt5", "rt6"]
-		routeOutsido = ["rtO1", "rtO2", "rtO3", "rtO4", "rtO5", "rtO6", "rtO7"]
+		routeInside = ["rt1", "rt2", "rt3", "rt4", "rt5", "rt6", "rt7", "rt8", "rt9"]
+		
 		iterador = 0
 		for id in traci.vehicle.getIDList():
 			if id == self.egoCarID:
@@ -490,24 +492,24 @@ class CustomEnv(Env):
 			idd = str(uuid.uuid4()) + "outside"
 			self.type_vehicle = randint(0,2)
 			#add adversary cars
-			#self._add_adversaries_cars(2)
+			self._add_adversaries_cars(2, idd)
 			if self.type_vehicle == 0:
 				if self.line_position == 2:
 					traci.vehicle.addFull(idu, choice(routeInside), depart=None, departPos='0', departSpeed='0', departLane='0', typeID=choice(car))
 					traci.vehicle.setSpeedMode(idu, int('101111',2))
-					traci.vehicle.setSpeed(idu, 0.0001)
+					traci.vehicle.setSpeed(idu, 3)
 					traci.vehicle.setLaneChangeMode(idu, 0)
 			elif self.type_vehicle == 1:
 				if self.line_position == 2:
 					traci.vehicle.addFull(idu, choice(routeInside), depart=None, departPos='0', departSpeed='0', departLane='0', typeID='vType2')
 					traci.vehicle.setSpeedMode(idu, int('101111',2))
-					traci.vehicle.setSpeed(idu, 0.0001)
+					traci.vehicle.setSpeed(idu, 3)
 					traci.vehicle.setLaneChangeMode(idu, 0)
 			elif self.type_vehicle == 2:
 				if self.line_position == 2:
 					traci.vehicle.addFull(idu, choice(routeInside), depart=None, departPos='0', departSpeed='0', departLane='0', typeID='vType3')
 					traci.vehicle.setSpeedMode(idu, int('110111',2))
-					traci.vehicle.setSpeed(idu, 0.0001)
+					traci.vehicle.setSpeed(idu, 3)
 					traci.vehicle.setLaneChangeMode(idu, 0)
 
 			self.spawn_cars += 1
