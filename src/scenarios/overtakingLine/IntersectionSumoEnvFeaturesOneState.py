@@ -84,7 +84,8 @@ class CustomEnv(Env):
 		return dist
 
 	def _get_current_lane_ego(self):
-		if traci.vehicle.getLaneID(self.egoCarID)[0] == "-": # carril exterior
+		#existe ego car y  carril exterior
+		if self.egoCarID in traci.vehicle.getIDList() and traci.vehicle.getLaneID(self.egoCarID)[0] == "-":
 			return 1
 		return 0
 
@@ -160,7 +161,6 @@ class CustomEnv(Env):
 				done = False
 				break
 		
-	
 		reward = 0
 	
 		if not done:
@@ -168,7 +168,6 @@ class CustomEnv(Env):
 			self.state = self._obs()
 			self._collision()
 			done, reward = self._reward(action)
-			#miro si ego está al final de la linea
 			if (done == False):
 				done = self._reach_end_line()
 		
@@ -266,8 +265,6 @@ class CustomEnv(Env):
 		y_ego , x_ego = self._get_coords_ego()
 		if x_ego <= -100 and y_ego <= -95:
 			return True
-		'''if x_ego <= -98 and y_ego <= -95:
-			return True'''
 		return False
 
 	def _obs(self):
@@ -437,13 +434,11 @@ class CustomEnv(Env):
 		return x, y
 
 	def _addEgoCar(self):
-		try:
+		if self.egoCarID not in traci.vehicle.getIDList():
 			traci.vehicle.addFull(self.egoCarID, 'routeEgo', depart=None, departPos='0', departSpeed='0', departLane='0', typeID='vType0')
 			traci.vehicle.setSpeedMode(self.egoCarID, int('111111',2))
 			traci.vehicle.setSpeed(self.egoCarID, 6)
 			traci.vehicle.setLaneChangeMode(self.egoCarID, 0)
-		except:
-			print("-----> Exception: Ego car already exists")
 
 	def _add_adversaries_cars(self, velocity, idd):
 		car = ["vType1", "vType2", "vType3", "vType4", "vType5"]
@@ -469,9 +464,9 @@ class CustomEnv(Env):
 
 
 	def _addCar(self):
-		max_cars = 4
+		max_cars = 7
 		car = ["vType1", "vType2", "vType3", "vType4", "vType5"]
-		routeInside = ["rt1", "rt2", "rt3", "rt4", "rt5", "rt6", "rt7", "rt8", "rt9"]
+		routeInside = ["rt3", "rt4", "rt5", "rt6", "rt7", "rt8", "rt9"]
 		
 		iterador = 0
 		for id in traci.vehicle.getIDList():
