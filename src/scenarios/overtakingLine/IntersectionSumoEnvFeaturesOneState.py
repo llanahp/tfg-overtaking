@@ -131,16 +131,15 @@ class CustomEnv(Env):
 				d_ego = self.collision_point(d_ego, adversaries_x[i], d_max)
 				angle = int(round(traci.vehicle.getAngle(self.egoCarID), 0))
 				if abs(x - x_ego) <= d_max:
-					if angle >= 265 and angle <= 275 and y - 11 > y_ego: # abajo y hacia la izquierda
+					if angle >= 265 and angle <= 275 and y - 6 > y_ego: # abajo y hacia la izquierda
 						continue
-					if angle >= 85 and angle <= 95 and y + 11 < y_ego: # arriba y hacia la derecha
+					if angle >= 85 and angle <= 95 and y + 6 < y_ego: # arriba y hacia la derecha
 						continue
 				elif abs(y - y_ego) <= d_max:
-					if angle >= 175 and angle <= 185 and x - 11 > x_ego: # izquierda y hacia abajo
+					if angle >= 175 and angle <= 185 and x - 6 > x_ego: # izquierda y hacia abajo
 						continue
-					if angle >= 355 and angle <= 5 and x + 11 < x_ego:
+					if angle >= 355 and angle <= 5 and x + 6 < x_ego:
 						continue
-				
 				if id.find("inside") != -1 and d != 1.0: #inside line
 					resul.append([id, d])
 		#ordeno los coches de mayor a menor distancia
@@ -225,7 +224,7 @@ class CustomEnv(Env):
 		
 
 		if (done == False): 
-			is_inside = self._reward_right_lante(3)
+			is_inside = self._reward_right_lante(1)
 			
 			# si estoy en el carril exterior y no hay coches en el interior
 			v  = self._reward_wrong_action(traci.vehicle.getSpeed(self.egoCarID))
@@ -314,14 +313,14 @@ class CustomEnv(Env):
 				angle = int(round(traci.vehicle.getAngle(self.egoCarID), 0))
 				if abs(x - x_ego) <= d_max: # si el coche está arriva o abajo
 					#+-5 angulo de error (270)
-					if angle >= 265 and angle <= 275 and y - 11 > y_ego: # abajo y hacia la izquierda
+					if angle >= 265 and angle <= 275 and y - 6 > y_ego: # abajo y hacia la izquierda
 						continue
-					if angle >= 85 and angle <= 95 and y + 11 < y_ego: # arriba y hacia la derecha
+					if angle >= 85 and angle <= 95 and y + 6 < y_ego: # arriba y hacia la derecha
 						continue
 				elif abs(y - y_ego) <= d_max: # si el coche está a la derecha o izquierda
-					if angle >= 175 and angle <= 185 and x - 11 > x_ego: # izquierda y hacia abajo
+					if angle >= 175 and angle <= 185 and x - 6 > x_ego: # izquierda y hacia abajo
 						continue
-					if angle >= 355 and angle <= 5 and x + 11 < x_ego:
+					if angle >= 355 and angle <= 5 and x + 6 < x_ego:
 						continue
 
 				if id.find("inside") != -1: #inside line
@@ -398,7 +397,7 @@ class CustomEnv(Env):
 		d_ext_2 = self._round_distance(1 - d_exterior_pre[1])
 
 		self.state["adversaries"] = np.array([d_int_1,v_intirior[v_intirior_i],d_int_2,v_intirior[v_intirior_i+1],d_ext_1,v_exterior[v_exterior_i],d_ext_2,v_exterior[v_exterior_i+1]])
-		#print("[", d_int_1, ", ", v_intirior[v_intirior_i], ", ", d_int_2, ", ", v_intirior[v_intirior_i+1], ", ", d_ext_1, ", ", v_exterior[v_exterior_i], ", ", d_ext_2, ", ", v_exterior[v_exterior_i+1], " ]")
+		print("[", d_int_1, ", ", v_intirior[v_intirior_i], ", ", d_int_2, ", ", v_intirior[v_intirior_i+1], ", ", d_ext_1, ", ", v_exterior[v_exterior_i], ", ", d_ext_2, ", ", v_exterior[v_exterior_i+1], " ]")
 		
 		#direccion ego en el mapa
 		if self.egoCarID in traci.vehicle.getIDList():
@@ -462,7 +461,6 @@ class CustomEnv(Env):
 				traci.vehicle.setSpeed(idd, velocity)
 				traci.vehicle.setLaneChangeMode(idd, 0)
 
-
 	def _addCar(self):
 		max_cars = 7
 		car = ["vType1", "vType2", "vType3", "vType4", "vType5"]
@@ -487,7 +485,7 @@ class CustomEnv(Env):
 			idd = str(uuid.uuid4()) + "outside"
 			self.type_vehicle = randint(0,2)
 			#add adversary cars
-			self._add_adversaries_cars(2, idd)
+			#self._add_adversaries_cars(2, idd)
 			if self.type_vehicle == 0:
 				if self.line_position == 2:
 					traci.vehicle.addFull(idu, choice(routeInside), depart=None, departPos='0', departSpeed='0', departLane='0', typeID=choice(car))
