@@ -6,7 +6,6 @@ from stable_baselines3 import PPO, DDPG, A2C
 from sb3_contrib import RecurrentPPO
 import importlib
 
-
 def displayResults(success, collision, timeout, t, episodes):
 	t = t/episodes
 	success = success/episodes

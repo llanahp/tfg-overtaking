@@ -397,7 +397,7 @@ class CustomEnv(Env):
 		d_ext_2 = self._round_distance(1 - d_exterior_pre[1])
 
 		self.state["adversaries"] = np.array([d_int_1,v_intirior[v_intirior_i],d_int_2,v_intirior[v_intirior_i+1],d_ext_1,v_exterior[v_exterior_i],d_ext_2,v_exterior[v_exterior_i+1]])
-		print("[", d_int_1, ", ", v_intirior[v_intirior_i], ", ", d_int_2, ", ", v_intirior[v_intirior_i+1], ", ", d_ext_1, ", ", v_exterior[v_exterior_i], ", ", d_ext_2, ", ", v_exterior[v_exterior_i+1], " ]")
+		#print("[", d_int_1, ", ", v_intirior[v_intirior_i], ", ", d_int_2, ", ", v_intirior[v_intirior_i+1], ", ", d_ext_1, ", ", v_exterior[v_exterior_i], ", ", d_ext_2, ", ", v_exterior[v_exterior_i+1], " ]")
 		
 		#direccion ego en el mapa
 		if self.egoCarID in traci.vehicle.getIDList():
