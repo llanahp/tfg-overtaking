@@ -548,13 +548,16 @@ class CustomEnv(Env):
 
 	def _reward_wrong_action(self, prev_vel):
 		if self.egoCarID in traci.vehicle.getIDList():
-			if traci.vehicle.getLaneID(self.egoCarID).startswith("-") == False:
+			inside_cars = self._get_vehicle_intirior()
+			if traci.vehicle.getLaneID(self.egoCarID).startswith("-") == False: # si estoy en el carril exterior
 				# si no hay coches en el interior
-				inside_cars = self._get_vehicle_intirior()
 				if inside_cars == []:
 					return 0
 				else:
 					# si hay coches en el interior pero estan muy lejos, no le doy premio por estar a la  izquierda
 					if inside_cars[1] < 0.9:
 						return 0
+			else: # si estoy en el carril interior
+				if inside_cars != [] and round(1 - inside_cars[1],1) >= 0.9: # si hay coches en el interior y estan muy cerca, le quito premio 
+					return 0
 		return prev_vel

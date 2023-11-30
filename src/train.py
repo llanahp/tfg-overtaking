@@ -147,7 +147,7 @@ def createEnv(args, model_dir):
 			features_extractor_class=CustomCombinedExtractorOneState,
 			net_arch = dict(pi=[128, 128], vf=[128, 128])
 			)
-		elif (args.model == "SAC"):
+		elif (args.model == "A2C"):
 			policy_kwargs = dict(
 			features_extractor_class=CustomCombinedExtractorOneState,
 			net_arch = dict(pi=[128, 128], vf=[128, 128], qf=[128, 128])
@@ -163,15 +163,15 @@ def createEnv(args, model_dir):
 			features_extractor_class=CustomCombinedExtractorOneState,
 			net_arch = dict(pi=[256, 256], vf=[256, 256])
 			)
-		elif (args.model == "SAC"):
+		elif (args.model == "A2C"):
 			policy_kwargs = dict(
 			features_extractor_class=CustomCombinedExtractorOneState,
-			net_arch = dict(pi=[128, 128], vf=[128, 128], qf=[128, 128])
+			net_arch = dict(pi=[256, 256], vf=[256, 256])
 			)
 		elif (args.model == "DQN"):
 			policy_kwargs = dict(
 			features_extractor_class=CustomCombinedExtractorOneState,
-			net_arch = [64, 128, 64]
+			net_arch = [256, 256]
 			)
 		policy = "MultiInputPolicy"
 	
@@ -190,21 +190,32 @@ def createModel(args, policy, policy_kwargs, env, log_dir, model_dir):
 		if args.pretrained == "no":
 			model = PPO(policy, env, verbose = 1, policy_kwargs=policy_kwargs, tensorboard_log=log_dir)
 		else:
-			print(os.path.join(model_dir, '{}_{}_'.format(args.env, args.model)) + args.pretrained)
-			model = PPO.load(os.path.join(model_dir, '{}_{}_'.format(args.env, args.model)+args.pretrained), env=env)
+			path = os.path.join(model_dir, '{}_{}_'.format(args.env, args.model)) + args.pretrained
+			print("pretrained: ",path)
+			model = PPO.load(path, env=env)
 
-	elif args.model == "SAC":
+	elif args.model == "A2C":
 		if args.pretrained == "no":
-			model = SAC(policy, env, verbose = 1, policy_kwargs=policy_kwargs, tensorboard_log=log_dir)
+			model = A2C(policy, env, verbose = 1, policy_kwargs=policy_kwargs, tensorboard_log=log_dir)
 		else:
-			model = SAC.load(os.path.join(model_dir, '{}_{}_'.format(args.env, args.model)), env=env)
+			path = os.path.join(model_dir, '{}_{}_'.format(args.env, args.model)) + args.pretrained
+			print("pretrained: ",path)
+			model = A2C.load(path, env=env)
 	
 	elif args.model == "DQN":
 		if args.pretrained == "no":
-			model = DQN(policy, env, verbose = 1, policy_kwargs=policy_kwargs, tensorboard_log=log_dir)
+			model = DQN(policy, env, verbose = 1, policy_kwargs=policy_kwargs, tensorboard_log=log_dir,
+			train_freq = 4, #update the model every train_freq steps. set to None to disable printing
+			batch_size=16,  # size of a batched sampled from replay buffer for training
+			learning_rate=0.05,  # Ajustar la tasa de aprendizaje
+			buffer_size=50000,  # Cuantos entrenamientos anteriores se almacenan en la memoria y se utilizan para aprender de ellos
+			#exploration_fraction=0.2,
+			#exploration_final_eps=0.01,
+			)
 		else:
-			print(os.path.join(model_dir, '{}_{}_'.format(args.env, args.model)) + args.pretrained)
-			model = DQN.load(os.path.join(model_dir, '{}_{}_'.format(args.env, args.model)), env=env)
+			path = os.path.join(model_dir, '{}_{}_'.format(args.env, args.model)) + args.pretrained
+			print("pretrained: ",path)
+			model = DQN.load(path, env=env)
 
 	return model
 		

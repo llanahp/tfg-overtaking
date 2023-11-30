@@ -11,7 +11,6 @@ import time
 import math 
 
 # Imports Prediction Modules
-from scenarios.SMARTS.prediction.predictions_utils import Motion_Predictor
 
 # Import CARLA
 import carla
@@ -61,8 +60,6 @@ class CustomEnv(Env):
         self.egoCarID = "ego"
         self.adversaries_keys = dict()
         self.adversaries_id_cnt = 1
-
-        self.motion_predictor = Motion_Predictor()
 
         self.write_csv = False
         self.predict = True
@@ -274,7 +271,7 @@ class CustomEnv(Env):
         obs = {}
 
         adversaries = []
-
+        '''
         vehicles = self.world.get_actors().filter('vehicle.*.*')
         for vehicle in vehicles:
             if vehicle.id != self.ego_vehicle.id and self.vehicle_in_range(vehicle):
@@ -326,9 +323,8 @@ class CustomEnv(Env):
                         state[current_adv][0] = [obs[num_adv][49][0], obs[num_adv][49][1]]
                     else:
                         break
-
+        '''
         return state
-
 
     def _reach_intersection(self):
         
@@ -347,7 +343,6 @@ class CustomEnv(Env):
             self.localization_pub()
             i += 1
             time.sleep(0.05)
-
 
     def _run_carla(self):
         # Carla Config

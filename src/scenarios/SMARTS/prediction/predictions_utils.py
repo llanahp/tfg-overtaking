@@ -34,8 +34,7 @@ class Motion_Predictor():
         self.prediction_network = get_prediction_model()
 
     def preprocess_trackers(self, trajectories):
-        """
-        """
+       
         
         agents_info_array = np.zeros([0, self.required_variables])
 
@@ -68,8 +67,7 @@ class Motion_Predictor():
         return valid_agents_info, valid_agents_id
 
     def predict_agents(self, valid_agents_info, file_id):
-        """
-        """
+       
              
         # Get agents of the scene (we assume the first one represents our ego-vehicle)
         # (N agents * 50) x 5 (track_id, timestep, x, y, padding)
