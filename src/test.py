@@ -2,7 +2,7 @@ import os
 import sys
 import argparse
 import random
-from stable_baselines3 import PPO, DDPG, A2C
+from stable_baselines3 import PPO, DDPG, A2C, SAC, DQN
 from sb3_contrib import RecurrentPPO
 import importlib
 
@@ -101,6 +101,10 @@ def defineModel(args, env):
 			model = DDPG.load(Path, env=env)
 		elif args.model == "A2C":
 			model = A2C.load(Path, env=env)
+		elif args.model == "SAC":
+			model = SAC.load(Path, env=env)
+		elif args.model == "DQN":
+			model = DQN.load(Path, env=env)
 		elif args.model == "RecurrentPPO":
 			model = RecurrentPPO.load(Path, env=env)
 	if (model == None):

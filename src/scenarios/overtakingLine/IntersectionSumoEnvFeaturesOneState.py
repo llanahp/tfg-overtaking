@@ -29,7 +29,7 @@ import traci
 
 class CustomEnv(Env):
 	def __init__(self, render=False):
-		self.action_space = Discrete(3) #Box(low=0, high=1, shape=(2,))# Number of actions
+		self.action_space = Discrete(3) #Box(low=0, high=1, shape=(1,))# 
 		self.n_adversaries = 4  # 2 going up and 2 going down
 		self.n_features = 2 # distance to type_vehicle, speed
 		self.n_features_ego = 2 # line and speed
@@ -63,7 +63,7 @@ class CustomEnv(Env):
 
 		traci.start(sumoCmd)
 
-		self.egoCarID = "ego"
+		self.ego_car_ID = "ego"
 		self.egoCar = True
 		self.range = 50
 		self.swap = True
@@ -73,8 +73,8 @@ class CustomEnv(Env):
 
 	# Return the coordinates of the ego car
 	def _get_coords_ego(self):
-		x_ego = round(traci.vehicle.getPosition(self.egoCarID)[0],2)
-		y_ego = round(traci.vehicle.getPosition(self.egoCarID)[1],2)
+		x_ego = round(traci.vehicle.getPosition(self.ego_car_ID)[0],2)
+		y_ego = round(traci.vehicle.getPosition(self.ego_car_ID)[1],2)
 		return x_ego, y_ego
 
 	# Round the distance to other vehicles
@@ -85,7 +85,7 @@ class CustomEnv(Env):
 
 	def _get_current_lane_ego(self):
 		#existe ego car y  carril exterior
-		if self.egoCarID in traci.vehicle.getIDList() and traci.vehicle.getLaneID(self.egoCarID)[0] == "-":
+		if self.ego_car_ID in traci.vehicle.getIDList() and traci.vehicle.getLaneID(self.ego_car_ID)[0] == "-":
 			return 1
 		return 0
 
@@ -105,7 +105,7 @@ class CustomEnv(Env):
 
 
 		for id in traci.vehicle.getIDList():
-			if id != self.egoCarID and self.vehicle_in_range(id):
+			if id != self.ego_car_ID and self.vehicle_in_range(id):
 				x_adv, y_adv = traci.vehicle.getPosition(id)
 				adversaries_y.append(x_adv)
 				adversaries_x.append(y_adv)
@@ -129,20 +129,20 @@ class CustomEnv(Env):
 				d = d / d_max
 
 				d_ego = self.collision_point(d_ego, adversaries_x[i], d_max)
-				angle = int(round(traci.vehicle.getAngle(self.egoCarID), 0))
+				angle = int(round(traci.vehicle.getAngle(self.ego_car_ID), 0))
 				if abs(x - x_ego) <= d_max:
-					if angle >= 265 and angle <= 275 and y - 6 > y_ego: # abajo y hacia la izquierda
+					if angle >= 265 and angle <= 275 and y - 8 > y_ego: # top and left
 						continue
-					if angle >= 85 and angle <= 95 and y + 6 < y_ego: # arriba y hacia la derecha
+					if angle >= 85 and angle <= 95 and y + 8 < y_ego: # top and right
 						continue
 				elif abs(y - y_ego) <= d_max:
-					if angle >= 175 and angle <= 185 and x - 6 > x_ego: # izquierda y hacia abajo
+					if angle >= 175 and angle <= 185 and x - 8 > x_ego: # botton and left
 						continue
-					if angle >= 355 and angle <= 5 and x + 6 < x_ego:
+					if angle >= 355 and angle <= 5 and x + 8 < x_ego:
 						continue
 				if id.find("inside") != -1 and d != 1.0: #inside line
 					resul.append([id, d])
-		#ordeno los coches de mayor a menor distancia
+		#order the cars from the nearest to the farthest
 		for i in range(len(resul)):
 			for j in range(i, len(resul)):
 				if resul[i][1] > resul[j][1]:
@@ -156,7 +156,7 @@ class CustomEnv(Env):
 	def step(self, action):
 		done = True
 		for id in traci.vehicle.getIDList():
-			if id == self.egoCarID:
+			if id == self.ego_car_ID:
 				done = False
 				break
 		
@@ -195,7 +195,7 @@ class CustomEnv(Env):
 		self._addCar()
 
 		self.egoCar = False
-		self._addEgoCar()
+		self._add_ego_car()
 		self.egoCar = True
 		traci.simulationStep()
 
@@ -211,7 +211,7 @@ class CustomEnv(Env):
 
 	def _reward(self, action):
 		done = False
-		timeout = 250
+		timeout = 210
 		reward = 0.0
 		time = traci.simulation.getTime() - self.time_reset
 		if  time > timeout:
@@ -226,18 +226,17 @@ class CustomEnv(Env):
 		if (done == False): 
 			is_inside = self._reward_right_lante(1)
 			
-			# si estoy en el carril exterior y no hay coches en el interior
-			v  = self._reward_wrong_action(traci.vehicle.getSpeed(self.egoCarID))
+			#if egocar is in the exterior line and there are no cars in the interior line
+			v  = self._reward_wrong_action(traci.vehicle.getSpeed(self.ego_car_ID))
 			
-			# si se ha producido un adelantamiento
+			# if overtake has been produced
 			adelantamiento = self._reward_overtaking(20)
 			if adelantamiento != 0 and v == 0:
-				v = traci.vehicle.getSpeed(self.egoCarID)
+				v = traci.vehicle.getSpeed(self.ego_car_ID)
 			
-			#redondo a 2 decimales
+			# round to 2 decimals
 			reward = round(v * (is_inside + adelantamiento), 2)
 
-		
 		self.prev_action = action
 		self.total_reward += reward
 		if done:
@@ -245,18 +244,28 @@ class CustomEnv(Env):
 		return done, reward
 
 	def _collision(self):
-		if self.egoCarID in traci.simulation.getCollidingVehiclesIDList():
+		if self.ego_car_ID in traci.simulation.getCollidingVehiclesIDList():
 			self.collision = True
 
 	def _action(self, action):
-		if action == 0:
-			traci.vehicle.changeLaneRelative(self.egoCarID, -1, 0) #derecha
+		
+		#SAC
+		'''action  = action[0]
+		if action >= 0 and action <= 0.33:
+			action = 0
+		elif action > 0.33 and action <= 0.66:
+			action = 1
+		elif action > 0.66 and action <= 1:
+			action = 2'''
+
+		if action == 0:#right
+			traci.vehicle.changeLaneRelative(self.ego_car_ID, -1, 0)
 			
-		elif action == 1:
-			traci.vehicle.changeLaneRelative(self.egoCarID, 0, 0) #mantenerse en el carril
+		elif action == 1:#stay
+			traci.vehicle.changeLaneRelative(self.ego_car_ID, 0, 0) 
 			
-		elif action == 2:
-			traci.vehicle.changeLaneRelative(self.egoCarID, 1, 0) #izquierda
+		elif action == 2:#left
+			traci.vehicle.changeLaneRelative(self.ego_car_ID, 1, 0)
 			
 		pass
 	
@@ -286,7 +295,7 @@ class CustomEnv(Env):
 		adversaries_v = []
 
 		for id in traci.vehicle.getIDList():
-			if id != self.egoCarID and self.vehicle_in_range(id):
+			if id != self.ego_car_ID and self.vehicle_in_range(id):
 				x_adv, y_adv = traci.vehicle.getPosition(id)
 				adversaries_y.append(x_adv)
 				adversaries_x.append(y_adv)
@@ -310,17 +319,17 @@ class CustomEnv(Env):
 				d = d / d_max
 
 				d_ego = self.collision_point(d_ego, adversaries_x[i], d_max)
-				angle = int(round(traci.vehicle.getAngle(self.egoCarID), 0))
+				angle = int(round(traci.vehicle.getAngle(self.ego_car_ID), 0))
 				if abs(x - x_ego) <= d_max: # si el coche está arriva o abajo
-					#+-5 angulo de error (270)
-					if angle >= 265 and angle <= 275 and y - 6 > y_ego: # abajo y hacia la izquierda
+					#+-5º of error
+					if angle >= 265 and angle <= 275 and y - 8 > y_ego: # abajo y hacia la izquierda
 						continue
-					if angle >= 85 and angle <= 95 and y + 6 < y_ego: # arriba y hacia la derecha
+					if angle >= 85 and angle <= 95 and y + 8 < y_ego: # arriba y hacia la derecha
 						continue
 				elif abs(y - y_ego) <= d_max: # si el coche está a la derecha o izquierda
-					if angle >= 175 and angle <= 185 and x - 6 > x_ego: # izquierda y hacia abajo
+					if angle >= 175 and angle <= 185 and x - 8 > x_ego: # izquierda y hacia abajo
 						continue
-					if angle >= 355 and angle <= 5 and x + 6 < x_ego:
+					if angle >= 355 and angle <= 5 and x + 8 < x_ego:
 						continue
 
 				if id.find("inside") != -1: #inside line
@@ -400,9 +409,9 @@ class CustomEnv(Env):
 		#print("[", d_int_1, ", ", v_intirior[v_intirior_i], ", ", d_int_2, ", ", v_intirior[v_intirior_i+1], ", ", d_ext_1, ", ", v_exterior[v_exterior_i], ", ", d_ext_2, ", ", v_exterior[v_exterior_i+1], " ]")
 		
 		#direccion ego en el mapa
-		if self.egoCarID in traci.vehicle.getIDList():
-			#d_ego = round(round(traci.vehicle.getPosition(self.egoCarID)[0],2) / d_max, 3)
-			v_ego = round(traci.vehicle.getSpeed(self.egoCarID) / v_max, 2)
+		if self.ego_car_ID in traci.vehicle.getIDList():
+			#d_ego = round(round(traci.vehicle.getPosition(self.ego_car_ID)[0],2) / d_max, 3)
+			v_ego = round(traci.vehicle.getSpeed(self.ego_car_ID) / v_max, 2)
 		self.state["ego"] = np.array([self._get_current_lane_ego(), v_ego])
 		return self.state
 
@@ -418,26 +427,26 @@ class CustomEnv(Env):
 			return d_ego
 
 	def vehicle_in_range(self, id):
-		if math.sqrt(pow(traci.vehicle.getPosition(self.egoCarID)[0] - traci.vehicle.getPosition(id)[0] ,2) + 
-					 pow(traci.vehicle.getPosition(self.egoCarID)[1] - traci.vehicle.getPosition(id)[1] ,2)) < self.range:
+		if math.sqrt(pow(traci.vehicle.getPosition(self.ego_car_ID)[0] - traci.vehicle.getPosition(id)[0] ,2) + 
+					 pow(traci.vehicle.getPosition(self.ego_car_ID)[1] - traci.vehicle.getPosition(id)[1] ,2)) < self.range:
 					 return True; return False 
 
 	def local_to_global(self, id):
-		x_ego = traci.vehicle.getPosition(self.egoCarID)[0]
-		y_ego = traci.vehicle.getPosition(self.egoCarID)[1]
-		yaw = (traci.vehicle.getAngle(self.egoCarID) * math.pi) / 180
+		x_ego = traci.vehicle.getPosition(self.ego_car_ID)[0]
+		y_ego = traci.vehicle.getPosition(self.ego_car_ID)[1]
+		yaw = (traci.vehicle.getAngle(self.ego_car_ID) * math.pi) / 180
 		x_adv = traci.vehicle.getPosition(id)[0]
 		y_adv = traci.vehicle.getPosition(id)[1]
 		x = (x_adv - x_ego)*math.cos(yaw) + (y_adv - y_ego)*math.sin(yaw)
 		y = -(x_adv - x_ego)*math.sin(yaw) + (y_adv - y_ego)*math.cos(yaw)
 		return x, y
 
-	def _addEgoCar(self):
-		if self.egoCarID not in traci.vehicle.getIDList():
-			traci.vehicle.addFull(self.egoCarID, 'routeEgo', depart=None, departPos='0', departSpeed='0', departLane='0', typeID='vType0')
-			traci.vehicle.setSpeedMode(self.egoCarID, int('111111',2))
-			traci.vehicle.setSpeed(self.egoCarID, 6)
-			traci.vehicle.setLaneChangeMode(self.egoCarID, 0)
+	def _add_ego_car(self):
+		if self.ego_car_ID not in traci.vehicle.getIDList():
+			traci.vehicle.addFull(self.ego_car_ID, 'routeEgo', depart=None, departPos='0', departSpeed='0', departLane='0', typeID='vType0')
+			traci.vehicle.setSpeedMode(self.ego_car_ID, int('111111',2))
+			traci.vehicle.setSpeed(self.ego_car_ID, 6)
+			traci.vehicle.setLaneChangeMode(self.ego_car_ID, 0)
 
 	def _add_adversaries_cars(self, velocity, idd):
 		car = ["vType1", "vType2", "vType3", "vType4", "vType5"]
@@ -468,7 +477,7 @@ class CustomEnv(Env):
 		
 		iterador = 0
 		for id in traci.vehicle.getIDList():
-			if id == self.egoCarID:
+			if id == self.ego_car_ID:
 				continue
 			traci.vehicle.remove(id)
 		traci.simulationStep()
@@ -485,7 +494,7 @@ class CustomEnv(Env):
 			idd = str(uuid.uuid4()) + "outside"
 			self.type_vehicle = randint(0,2)
 			#add adversary cars
-			#self._add_adversaries_cars(2, idd)
+			self._add_adversaries_cars(2, idd)
 			if self.type_vehicle == 0:
 				if self.line_position == 2:
 					traci.vehicle.addFull(idu, choice(routeInside), depart=None, departPos='0', departSpeed='0', departLane='0', typeID=choice(car))
@@ -522,8 +531,8 @@ class CustomEnv(Env):
 			return False
 
 	def _reward_right_lante(self, amount):
-		if self.egoCarID in traci.vehicle.getIDList():
-			if traci.vehicle.getLaneID(self.egoCarID).startswith("-"):
+		if self.ego_car_ID in traci.vehicle.getIDList():
+			if traci.vehicle.getLaneID(self.ego_car_ID).startswith("-"):
 				return amount
 		return 0
 	
@@ -547,9 +556,9 @@ class CustomEnv(Env):
 		return adelantamiento
 
 	def _reward_wrong_action(self, prev_vel):
-		if self.egoCarID in traci.vehicle.getIDList():
+		if self.ego_car_ID in traci.vehicle.getIDList():
 			inside_cars = self._get_vehicle_intirior()
-			if traci.vehicle.getLaneID(self.egoCarID).startswith("-") == False: # si estoy en el carril exterior
+			if traci.vehicle.getLaneID(self.ego_car_ID).startswith("-") == False: # si estoy en el carril exterior
 				# si no hay coches en el interior
 				if inside_cars == []:
 					return 0
