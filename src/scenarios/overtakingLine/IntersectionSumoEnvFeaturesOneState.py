@@ -30,7 +30,7 @@ import traci
 class CustomEnv(Env):
 	def __init__(self, render=False):
 		self.action_space = Discrete(3) #Box(low=0, high=1, shape=(1,))# 
-		self.n_adversaries = 4  # 2 going up and 2 going down
+		self.n_adversaries = 4 
 		self.n_features = 2 # distance to type_vehicle, speed
 		self.n_features_ego = 2 # line and speed
 		self.line_position = 2

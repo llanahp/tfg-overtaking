@@ -63,7 +63,7 @@ def createEnviroment(args):
     "IntersectionFeaturesMulti": "scenarios.Intersection.IntersectionSumoEnvFeaturesMultiState",
     "IntersectionCarlaFeaturesOne": "scenarios.Intersection.IntersectionCarlaEnvFeaturesOneState",
     "IntersectionCarlaFeaturesMulti": "scenarios.Intersection.IntersectionCarlaEnvFeaturesMultiState",
-    "HighwayFeatures": "scenarios.Highway.HighwaySumoEnvFeatures",
+    "Highway": "scenarios.Highway.HighwaySumoEnvFeatures",
     "IntersectionRecurrent": "scenarios.Intersection.IntersectionSumoEnvFeaturesMultiState",
     "SMARTS": "scenarios.SMARTS.smartsEnv",
     "MultiSMARTS": "scenarios.SMARTS.smartsEnvMulti",

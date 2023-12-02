@@ -63,7 +63,7 @@ def createEnv(args, model_dir):
     "IntersectionFeaturesMulti": "scenarios.Intersection.IntersectionSumoEnvFeaturesMultiState",
     "IntersectionCarlaFeaturesOne": "scenarios.Intersection.IntersectionCarlaEnvFeaturesOneState",
     "IntersectionCarlaFeaturesMulti": "scenarios.Intersection.IntersectionCarlaEnvFeaturesMultiState",
-    "HighwayFeatures": "scenarios.Highway.HighwaySumoEnvFeatures",
+    "Highway": "scenarios.Highway.HighwaySumoEnvFeatures",
     "IntersectionRecurrent": "scenarios.Intersection.IntersectionSumoEnvFeaturesMultiState",
     "SMARTS": "scenarios.SMARTS.smartsEnv",
     "MultiSMARTS": "scenarios.SMARTS.smartsEnvMulti",
@@ -112,7 +112,7 @@ def createEnv(args, model_dir):
 		net_arch=(dict(pi=[128, 128], vf=[128, 128]))
 		)   
 		policy = "MultiInputPolicy"
-	elif args.env == "HighwayFeatures":
+	elif args.env == "Highway":
 		policy_kwargs = dict(
 		features_extractor_class=CustomCombinedExtractorOneState,
 		net_arch=(dict(pi=[128, 128], vf=[128, 128]))

@@ -180,46 +180,56 @@ class CustomEnv(Env):
 
 	def _observation(self):
 		d_ll=d_cl=d_rl=d_lf=d_cf=d_rf = 1
-		v_ll=v_cl=v_rl=v_lf=v_cf=v_rf = 1
+		v_ll=v_cl=v_rl=v_lf=v_cf=v_rf = 0
 		v_ego = 1
 		lane = -1
 		max_range = 100
-		v_max = 30
+		v_max = 6
 		self.state["adversaries"] = np.array([1] * 12)
-		self.state["ego"] = np.array([1])
+		self.state["ego"] = np.array([2])
 
-		for id in traci.vehicle.getIDList():
-			if id == self.egoCarID:
-				if traci.vehicle.getLeftLeaders(self.egoCarID):
-					d_ll = traci.vehicle.getLeftLeaders(self.egoCarID)[0][1] / max_range
-					v_ll = traci.vehicle.getSpeed(traci.vehicle.getLeftLeaders(self.egoCarID)[0][0]) / v_max
-				if traci.vehicle.getLeader(self.egoCarID):
-					d_cl = traci.vehicle.getLeader(self.egoCarID)[1] / max_range
-					v_cl = traci.vehicle.getSpeed(traci.vehicle.getLeader(self.egoCarID)[0]) / v_max
-				if traci.vehicle.getRightLeaders(self.egoCarID):
-					d_rl = traci.vehicle.getRightLeaders(self.egoCarID)[0][1] / max_range
-					v_rl = traci.vehicle.getSpeed(traci.vehicle.getRightLeaders(self.egoCarID)[0][0]) / v_max
-				if traci.vehicle.getLeftFollowers(self.egoCarID):
-					d_lf = traci.vehicle.getLeftFollowers(self.egoCarID)[0][1] / max_range
-					v_lf = traci.vehicle.getSpeed(traci.vehicle.getLeftFollowers(self.egoCarID)[0][0]) / v_max
-				if traci.vehicle.getFollower(self.egoCarID)[1]!=-1:
-					d_cf = traci.vehicle.getFollower(self.egoCarID)[1] / max_range
-					v_cf = traci.vehicle.getSpeed(traci.vehicle.getFollower(self.egoCarID)[0]) / v_max
-				if traci.vehicle.getRightFollowers(self.egoCarID):
-					d_rf = traci.vehicle.getRightFollowers(self.egoCarID)[0][1] / max_range
-					v_rf = traci.vehicle.getSpeed(traci.vehicle.getRightFollowers(self.egoCarID)[0][0]) / v_max
-				self.state["adversaries"] = np.array([d_ll, v_ll, d_cl, v_cl, d_rl, v_rl, d_lf, v_lf, d_cf, v_cf, d_rf, v_rf])
+		if self.egoCarID in traci.vehicle.getIDList():
+			if traci.vehicle.getLeftLeaders(self.egoCarID): # if there is a car on the left lane
+				id_oponent = traci.vehicle.getLeftLeaders(self.egoCarID)[0][0]
+				#print("1.- id:", id_oponent)
+				d_ll = traci.vehicle.getLeftLeaders(self.egoCarID)[0][1] / max_range
+				v_ll = traci.vehicle.getSpeed(traci.vehicle.getLeftLeaders(self.egoCarID)[0][0]) / v_max
+			if traci.vehicle.getLeader(self.egoCarID): # if there is a car on the same lane
+				#print("2.- id:", traci.vehicle.getLeader(self.egoCarID)[0])
+				d_cl = traci.vehicle.getLeader(self.egoCarID)[1] / max_range
+				v_cl = traci.vehicle.getSpeed(traci.vehicle.getLeader(self.egoCarID)[0]) / v_max
+			if traci.vehicle.getRightLeaders(self.egoCarID): # if there is a car on the right lane
+				#print("3.- id:", traci.vehicle.getRightLeaders(self.egoCarID)[0][0])
+				d_rl = traci.vehicle.getRightLeaders(self.egoCarID)[0][1] / max_range
+				v_rl = traci.vehicle.getSpeed(traci.vehicle.getRightLeaders(self.egoCarID)[0][0]) / v_max
+			if traci.vehicle.getLeftFollowers(self.egoCarID):
+				#print("4.- id:", traci.vehicle.getLeftFollowers(self.egoCarID)[0][0])
+				d_lf = traci.vehicle.getLeftFollowers(self.egoCarID)[0][1] / max_range
+				v_lf = traci.vehicle.getSpeed(traci.vehicle.getLeftFollowers(self.egoCarID)[0][0]) / v_max
+			if traci.vehicle.getFollower(self.egoCarID)[1]!=-1:
+				#print("5.- id:", traci.vehicle.getFollower(self.egoCarID)[0])
+				d_cf = traci.vehicle.getFollower(self.egoCarID)[1] / max_range
+				v_cf = traci.vehicle.getSpeed(traci.vehicle.getFollower(self.egoCarID)[0]) / v_max
+			if traci.vehicle.getRightFollowers(self.egoCarID):
+				#print("6.- id:", traci.vehicle.getRightFollowers(self.egoCarID)[0][0])
+				d_rf = traci.vehicle.getRightFollowers(self.egoCarID)[0][1] / max_range
+				v_rf = traci.vehicle.getSpeed(traci.vehicle.getRightFollowers(self.egoCarID)[0][0]) / v_max
+			self.state["adversaries"] = np.array([d_ll, v_ll, d_cl, v_cl, d_rl, v_rl, d_lf, v_lf, d_cf, v_cf, d_rf, v_rf])
+			
 
-				
-				if self.egoCarID in traci.vehicle.getIDList():
-					lane = traci.vehicle.getLaneIndex(self.egoCarID)
-				v_ego = traci.vehicle.getSpeed(self.egoCarID) / v_max
-				self.state["ego"] = np.array([lane, v_ego])
-				break
+			for i in range(len(self.state["adversaries"])):
+				if self.state["adversaries"][i] != int(self.state["adversaries"][i]) and self.state["adversaries"][i] != 1.0 and self.state["adversaries"][i] != 0.0:
+					self.state["adversaries"][i] = round(self.state["adversaries"][i], 1)
+
+			#print(self.state["adversaries"])
+			
+			if self.egoCarID in traci.vehicle.getIDList():
+				lane = traci.vehicle.getLaneIndex(self.egoCarID)
+			v_ego = traci.vehicle.getSpeed(self.egoCarID) / v_max
+			self.state["ego"] = np.array([lane, v_ego])
 
 		return self.state
 
-	
 	def _action(self, action):
 		'''
 			action 0: change left
