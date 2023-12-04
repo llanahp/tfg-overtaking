@@ -70,7 +70,7 @@ class CustomEnv(Env):
 			traci.vehicle.addFull(id_car, 'routeEgo', depart=None, departPos=str(i*30+30), departSpeed='0', departLane='random', typeID='vType1')
 			traci.vehicle.setSpeedMode(id_car, int('00000',2))
 			traci.vehicle.setSpeed(id_car, 3)
-			traci.vehicle.setLaneChangeMode(id_car, int('00000',2))
+			traci.vehicle.setLaneChangeMode(id_car, 0)
 			traci.simulationStep()
 			i+=1
 
@@ -129,42 +129,50 @@ class CustomEnv(Env):
 		x_ego = traci.vehicle.getPosition(self.egoCarID)[0]
 		y_ego = traci.vehicle.getPosition(self.egoCarID)[1]
 		return x_ego, y_ego
-	
+
+	def _lane_reward(self):
+		k_lane = 0.1
+		lane_ego = traci.vehicle.getLaneIndex(self.egoCarID)
+		if lane_ego == 0: #right
+			k_lane = 0.3
+		elif lane_ego == 1: #center
+			k_lane = 0.2
+		elif lane_ego == 2: #left
+			k_lane = 0.1
+		return k_lane
+
 	def _reward(self):
 		reward = 0
 		done = False
-		timeout = 210
-		
+		timeout = 200
+		k_lane = 0.1
+		overtake_complete = 0 #TODO implement
 
-		ks = 1
-		kc = -2
-		kv = 0.0001 
-		ki = 0
 		time = traci.simulation.getTime() - self.time_reset
 
-		'''if  time > timeout:
+		if  time > timeout:
 			self.timeout = 1
-			done = True'''
-
-		x_ego, y_ego = self._coords_ego()
-		v = traci.vehicle.getSpeed(self.egoCarID)
-
+			reward = -6000
+			done = True
+		x_ego, _ = self._coords_ego()
 		if  x_ego > 795:
 			self.success = 1
 			done = True
 		if self.collision:
+			reward  = -6000
 			done = True
-		if traci.vehicle.getLaneIndex(self.egoCarID) == 0:
-			ki = 0.001     
-
-		reward = ks * self.success + \
-				 kc * self.collision + \
-				 kv * v + \
-				 ki
+			
+		
+		if not done:
+			# calculate reward
+			k_lane = self._lane_reward()
+			v = traci.vehicle.getSpeed(self.egoCarID)
+			reward = round(v * (k_lane + overtake_complete), 2)
+			if v < 4.5:
+				reward = 0
 
 		self.total_reward += reward
-		if done: 
-			#print("total reward: ",self.total_reward)
+		if done:
 			self.time_reset = traci.simulation.getTime()
 
 		return done, reward
@@ -176,7 +184,6 @@ class CustomEnv(Env):
 		
 		#Start the ego vehicle 
 		traci.vehicle.addFull(self.egoCarID, 'routeEgo', depart=None, departPos='0', departSpeed='0', departLane='0', typeID='vType0')
-		#traci.vehicle.setLaneChangeMode(self.egoCarID, int('00000',2))
 		traci.vehicle.setSpeedMode(self.egoCarID, int('111111',2))
 		traci.vehicle.setSpeed(self.egoCarID, 6)
 		traci.vehicle.setLaneChangeMode(self.egoCarID, 0)
