@@ -70,7 +70,8 @@ def createEnv(args, model_dir):
     "TransformersSMARTS": "scenarios.SMARTS.smartsEnvTransformers",
     "MultiCARLA": "scenarios.CARLA.carlaEnvMulti",
     "overtaking": "scenarios.overtaking.IntersectionSumoEnvFeaturesOneState",
-	"overtakingLine": "scenarios.overtakingLine.IntersectionSumoEnvFeaturesOneState"
+	"overtakingLine": "scenarios.overtakingLine.IntersectionSumoEnvFeaturesOneState",
+	"overtakingOneLine": "scenarios.overtakingOneLine.overtakingOneLine",
 	}
 
 	if args.env in diccionario:
@@ -163,6 +164,27 @@ def createEnv(args, model_dir):
 			net_arch = [64, 128, 64]
 			)
 	elif args.env == "overtakingLine":
+		if (args.model == "PPO"):
+			policy_kwargs = dict(
+			features_extractor_class=CustomCombinedExtractorOneState,
+			net_arch = dict(pi=[256, 256], vf=[256, 256])
+			)
+		elif (args.model == "A2C"):
+			policy_kwargs = dict(
+			features_extractor_class=CustomCombinedExtractorOneState,
+			net_arch = dict(pi=[256, 256], vf=[256, 256])
+			)
+		elif (args.model == "SAC"):
+			policy_kwargs = dict(
+			features_extractor_class=CustomCombinedExtractorOneState,
+			net_arch = dict(pi=[128, 128], vf=[128, 128], qf=[128, 128])
+			)
+		elif (args.model == "DQN"):
+			policy_kwargs = dict(
+			features_extractor_class=CustomCombinedExtractorOneState,
+			net_arch = [256, 256]
+			)
+	elif args.env == "overtakingOneLine":
 		if (args.model == "PPO"):
 			policy_kwargs = dict(
 			features_extractor_class=CustomCombinedExtractorOneState,

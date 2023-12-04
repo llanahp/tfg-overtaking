@@ -71,6 +71,7 @@ def createEnviroment(args):
     "MultiCARLA": "scenarios.CARLA.carlaEnvMulti",
     "overtaking": "scenarios.overtaking.IntersectionSumoEnvFeaturesOneState",
 	"overtakingLine": "scenarios.overtakingLine.IntersectionSumoEnvFeaturesOneState",
+	"overtakingOneLine": "scenarios.overtakingOneLine.overtakingOneLine",
 	}
 
 	if args.env in diccionario:
@@ -123,7 +124,7 @@ def testAgent(env, args, model, episodes):
 		score = 0
 
 		while not done:
-			action = 2 #random.randint(0, 2)
+			action = 0 #random.randint(0, 2)
 			if args.eval == "False":
 				action, _ = model.predict(obs)
 			if (args.verbose == "True"):
