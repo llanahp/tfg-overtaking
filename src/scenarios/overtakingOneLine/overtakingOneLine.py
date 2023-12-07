@@ -35,7 +35,7 @@ class CustomEnv(Env):
 		self.max_range = 100
 		self.observation_space = Dict({'ego':Box(0,1,shape=(self.obs_space_ego,)), 'adversaries':Box(0,1,shape=(self.obs_space_adver,)),})
 		self.state = self.observation_space.sample()
-		self.timestep = 0.4
+		self.timestep = 0.1
 		self.inside_cars = []
 		sumo = "sumo-gui" if render else "sumo"
 
@@ -72,7 +72,22 @@ class CustomEnv(Env):
 			offset = random.randint(10, 80)
 			traci.vehicle.addFull(id_car, 'routeEgo', depart=None, departPos=str(i*90+offset), departSpeed='0', departLane='random', typeID='vType1')
 			traci.vehicle.setSpeedMode(id_car, int('00000',2))
-			traci.vehicle.setSpeed(id_car, 0.00001)
+			traci.vehicle.setSpeed(id_car, 3)
+			traci.vehicle.setLaneChangeMode(id_car, 0)
+			traci.simulationStep()
+			i+=1
+		#add adversary cars in the opposite line
+		for i in range(10, 15):
+			try:
+				if str(i) in traci.vehicle.getIDList():
+					traci.vehicle.remove(str(i))
+			except:
+				pass
+			id_car = str(i)
+			offset = random.randint(10, 80)
+			traci.vehicle.addFull(id_car, 'adversary', depart=None, departPos=str((i-10)*95+offset), departSpeed='0', departLane='random', typeID='vType1')
+			traci.vehicle.setSpeedMode(id_car, int('00000',2))
+			traci.vehicle.setSpeed(id_car, 2)
 			traci.vehicle.setLaneChangeMode(id_car, 0)
 			traci.simulationStep()
 			i+=1
@@ -178,7 +193,7 @@ class CustomEnv(Env):
 	def _reward(self):
 		reward = 0
 		done = False
-		timeout = 260
+		timeout = 220
 		overtake_complete = 0
 
 		time = traci.simulation.getTime() - self.time_reset
