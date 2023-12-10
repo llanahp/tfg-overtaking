@@ -33,6 +33,9 @@ class CustomEnv(Env):
         reward = self._reward()
         info = {}
 
+        if done:
+            reward = 0
+
         return self.state, reward, done, info
 
 

@@ -27,8 +27,6 @@ import traci
 class CustomEnv(Env):
 	def __init__(self, render=False):
 		self.action_space = Discrete(3) #Box(low=0, high=1, shape=(1,))
-		self.N_actions = 3
-		self.action_space = Discrete(self.N_actions)
 		self.obs_space_ego = 2
 		self.obs_space_adver = 6
 		self.max_range = 100
@@ -46,30 +44,28 @@ class CustomEnv(Env):
 			"--collision.action",
 			"warn",
 			"--collision.mingap-factor",
-			"1", # 2 in overtaking env
+			"1", 
 			"--random",
 			"true",
 			"--no-warnings",
 		]
 
 		traci.start(sumoCmd)
-
 		self.egoCarID = "ego"
-
 		self.state = self.reset()
 
 	def adversaries(self):
 
-		for i in range(25):
+		for i in range(15):
 			try:
 				if str(i) in traci.vehicle.getIDList():
 					traci.vehicle.remove(str(i))
 			except:
 				pass
 			id_car = str(i)
-			traci.vehicle.addFull(id_car, 'routeEgo', depart=None, departPos=str(i*30+30), departSpeed='0', departLane='random', typeID='vType1')
+			traci.vehicle.addFull(id_car, 'routeEgo', depart=None, departPos=str(i*45+30), departSpeed='0', departLane='random', typeID='vType1')
 			traci.vehicle.setSpeedMode(id_car, int('00000',2))
-			traci.vehicle.setSpeed(id_car, 3)
+			traci.vehicle.setSpeed(id_car, 0.00001)
 			traci.vehicle.setLaneChangeMode(id_car, 0)
 			traci.simulationStep()
 			i+=1
@@ -133,20 +129,42 @@ class CustomEnv(Env):
 	def _lane_reward(self):
 		k_lane = 0.1
 		lane_ego = traci.vehicle.getLaneIndex(self.egoCarID)
-		if lane_ego == 0: #right
+		if lane_ego == 0: #bottom
 			k_lane = 0.3
 		elif lane_ego == 1: #center
 			k_lane = 0.2
-		elif lane_ego == 2: #left
+		elif lane_ego == 2: #top
 			k_lane = 0.1
 		return k_lane
+
+	def _calculate_best_trajectory(self):
+		reward = 0
+		obs = self._get_vehicles_obs()
+		lane_ego = traci.vehicle.getLaneIndex(self.egoCarID)
+		dis_inf = obs[0]
+		dis_cent = obs[2]
+		if lane_ego == 0: # ego is in the bottom lane
+			if dis_inf >= 0.9:
+				reward = 0
+			else :
+				reward = 1
+		elif lane_ego == 1: # ego is in the center lane
+			if dis_inf > 0.8:
+				reward = 1
+			else:
+				reward = 0
+		elif lane_ego == 2: # ego is in the top lane
+			if dis_inf > 0.8 and dis_cent > 0.8:
+				reward = 1
+			else:
+				reward = 0
+		return reward
 
 	def _reward(self):
 		reward = 0
 		done = False
-		timeout = 200
+		timeout = 160 # 137 es lo maximo que deberia tardar
 		k_lane = 0.1
-		overtake_complete = 0 #TODO implement
 
 		time = traci.simulation.getTime() - self.time_reset
 
@@ -162,12 +180,10 @@ class CustomEnv(Env):
 			reward  = -6000
 			done = True
 			
-		
 		if not done:
-			# calculate reward
-			k_lane = self._lane_reward()
+			k_lane = self._calculate_best_trajectory() #self._lane_reward()
 			v = traci.vehicle.getSpeed(self.egoCarID)
-			reward = round(v * (k_lane + overtake_complete), 2)
+			reward = round(v * (k_lane), 2)
 			if v < 4.5:
 				reward = 0
 
@@ -203,79 +219,83 @@ class CustomEnv(Env):
 				vehicles_in_range.append([id, x_adv, lane_adv, v_adv])
 		return vehicles_in_range
 
-	def _observation(self):
+	def _round_number(self, number):
+		if number != int(number) and number != 1.0 and number != 0.0:
+			return round(number, 1)
+		return number
+
+	def _get_vehicles_obs(self):
 		d_ll=d_cl=d_rl= 0
 		v_ll=v_cl=v_rl= 0
-		v_ego = 1
-		lane = -1
 		v_max = 6
-		self.state["adversaries"] = np.array([1] * self.obs_space_adver)
-		self.state["ego"] = np.array([self.obs_space_ego])
 
 		if self.egoCarID in traci.vehicle.getIDList():
 			adver_in_range = self._get_vehicles_in_range()
+			adver_bottom = []
+			adver_top = []
 			adver_center = []
-			adver_right = []
-			adver_left = []
 			x_ego, _ = self._coords_ego()
-			lane_ego = traci.vehicle.getLaneIndex(self.egoCarID)
 			for i in range(len(adver_in_range)):
 				x_adv = adver_in_range[i][1] + 8
 				lane_adv = adver_in_range[i][2]
 				if x_adv > x_ego: # in front
-					if lane_adv == lane_ego: # same line
+					if lane_adv == 0:
+						adver_bottom.append(adver_in_range[i])
+					if lane_adv == 1:
 						adver_center.append(adver_in_range[i])
-					if lane_adv == lane_ego + 1: # left line
-						adver_left.append(adver_in_range[i])
-					if lane_adv == lane_ego - 1: # right line
-						adver_right.append(adver_in_range[i])
+					if lane_adv == 2:
+						adver_top.append(adver_in_range[i])
 			
 			#Order by distance
+			adver_bottom.sort(key=lambda x: x[1])
 			adver_center.sort(key=lambda x: x[1])
-			adver_left.sort(key=lambda x: x[1])
-			adver_right.sort(key=lambda x: x[1])
-
-			if adver_left != []:
-				d_ll = 1 - abs((adver_left[0][1] - x_ego) / self.max_range)
-				v_ll = adver_left[0][3] / v_max
-			if adver_center != []:
-				d_cl =  1 - abs((adver_center[0][1] - x_ego) / self.max_range)
-				v_cl = adver_center[0][3] / v_max
-			if adver_right != []:
-				d_rl = 1 - abs((adver_right[0][1] - x_ego) / self.max_range)
-				v_rl = adver_right[0][3] / v_max
-			self.state["adversaries"] = np.array([d_ll, v_ll, d_cl, v_cl, d_rl, v_rl])
+			adver_top.sort(key=lambda x: x[1])
 			
+			if adver_center != []:
+				d_ll = 1 - abs((adver_center[0][1] - x_ego) / self.max_range)
+				v_ll = adver_center[0][3] / v_max
+			if adver_bottom != []:
+				d_cl =  1 - abs((adver_bottom[0][1] - x_ego) / self.max_range)
+				v_cl = adver_bottom[0][3] / v_max
+			if adver_top != []:
+				d_rl = 1 - abs((adver_top[0][1] - x_ego) / self.max_range)
+				v_rl = adver_top[0][3] / v_max
+		res = np.array([d_cl, v_cl, d_ll, v_ll, d_rl, v_rl])
+		for i in range(len(res)):
+			res[i] = self._round_number(res[i])
+		return res
+
+	def _observation(self):
+		v_max = 6
+		v_ego = 1
+		lane = -1
+		self.state["adversaries"] = np.array([1] * self.obs_space_adver)
+		self.state["ego"] = np.array([self.obs_space_ego])
+		if self.egoCarID in traci.vehicle.getIDList():
+			self.state["adversaries"] = self._get_vehicles_obs()
 
 			for i in range(len(self.state["adversaries"])):
-				if self.state["adversaries"][i] != int(self.state["adversaries"][i]) and self.state["adversaries"][i] != 1.0 and self.state["adversaries"][i] != 0.0:
-					self.state["adversaries"][i] = round(self.state["adversaries"][i], 1)
+				self.state["adversaries"][i] = self._round_number(self.state["adversaries"][i])
 
 			#print(self.state["adversaries"])
-			
 			if self.egoCarID in traci.vehicle.getIDList():
 				lane = traci.vehicle.getLaneIndex(self.egoCarID)
-			v_ego = traci.vehicle.getSpeed(self.egoCarID) / v_max
+			v_ego = self._round_number(traci.vehicle.getSpeed(self.egoCarID) / v_max)
 			self.state["ego"] = np.array([lane, v_ego])
+			#print(self.state["ego"])
 
 		return self.state
 
 	def _action(self, action):
-		'''
-			action 0: change left
-			action 1: keep lane
-			action 2: change right
-		'''
 		index = traci.vehicle.getLaneIndex(self.egoCarID)
-		
-		if action == 0 and index < 2: #Change Left
+		if action == 2 and index < 2: #Change Left
 			index += 1
 			traci.vehicle.changeLane(self.egoCarID, index, 0)
 
-		if action == 2 and index > 0: #Change Right
+		if action == 0 and index > 0: #Change Right
 			index -= 1
 			traci.vehicle.changeLane(self.egoCarID, index, 0)
-	
+
 	def _collision(self):
 		if self.egoCarID in traci.simulation.getCollidingVehiclesIDList():
 			self.collision = 1

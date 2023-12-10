@@ -4,10 +4,10 @@ import sys
 import argparse
 from datetime import datetime
 
-from stable_baselines3 import DDPG, PPO, A2C,SAC, DQN
+from stable_baselines3 import DDPG, PPO,A2C, SAC, DQN
 from stable_baselines3.common.monitor import Monitor
 
-from sb3_contrib import RecurrentPPO
+from sb3_contrib import RecurrentPPO, TRPO
 
 from config.train_config_one_state import CustomCombinedExtractorOneState, SaveOnBestTrainingRewardCallback
 from config.train_config_smarts import CustomCombinedExtractorSmarts
@@ -116,7 +116,8 @@ def createEnv(args, model_dir):
 	elif args.env == "Highway":
 		policy_kwargs = dict(
 		features_extractor_class=CustomCombinedExtractorOneState,
-		net_arch=(dict(pi=[128, 128], vf=[128, 128]))
+		net_arch= dict(pi=[256, 256], vf=[256, 256])
+
 		)   
 		policy = "MultiInputPolicy"
 	elif args.env == "SMARTS":
@@ -205,6 +206,11 @@ def createEnv(args, model_dir):
 			features_extractor_class=CustomCombinedExtractorOneState,
 			net_arch = [256, 256]
 			)
+		elif (args.model == "TRPO"):
+			policy_kwargs = dict(
+			features_extractor_class=CustomCombinedExtractorOneState,
+			net_arch = dict(pi=[256, 256], vf=[256, 256])
+			)
 		policy = "MultiInputPolicy"
 	
 	env = CustomEnv(render=False)
@@ -253,6 +259,14 @@ def createModel(args, policy, policy_kwargs, env, log_dir, model_dir):
 			path = os.path.join(model_dir, '{}_{}_'.format(args.env, args.model)) + args.pretrained
 			print("pretrained: ",path)
 			model = DQN.load(path, env=env)
+
+	elif args.model == "TRPO":
+		if args.pretrained == "no":
+			model = TRPO(policy, env, verbose = 1, policy_kwargs=policy_kwargs, tensorboard_log=log_dir)
+		else:
+			path = os.path.join(model_dir, '{}_{}_'.format(args.env, args.model)) + args.pretrained
+			print("pretrained: ",path)
+			model = TRPO.load(path, env=env)
 
 	return model
 		
