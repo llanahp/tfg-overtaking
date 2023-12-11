@@ -3,7 +3,7 @@ import sys
 import argparse
 import random
 from stable_baselines3 import PPO, DDPG, A2C, SAC, DQN
-from sb3_contrib import RecurrentPPO
+from sb3_contrib import RecurrentPPO, TRPO
 import importlib
 
 def displayResults(success, collision, timeout, t, episodes):
@@ -108,6 +108,8 @@ def defineModel(args, env):
 			model = DQN.load(Path, env=env)
 		elif args.model == "RecurrentPPO":
 			model = RecurrentPPO.load(Path, env=env)
+		elif args.model == "TRPO":
+			model = TRPO.load(Path, env=env)
 	if (model == None):
 		return 
 	return model

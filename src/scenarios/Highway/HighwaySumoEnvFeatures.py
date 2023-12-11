@@ -33,7 +33,12 @@ class CustomEnv(Env):
 		self.observation_space = Dict({'ego':Box(0,1,shape=(self.obs_space_ego,)), 'adversaries':Box(0,1,shape=(self.obs_space_adver,)),})
 		self.state = self.observation_space.sample()
 		self.timestep = 0.1
+		self._prev_adver_bottom = []
+		self._prev_adver_center = []
+		self._prev_adver_top = []
+		self.k_overtake = 0
 		sumo = "sumo-gui" if render else "sumo"
+
 
 		sumoCmd = [
 			sumo,
@@ -65,7 +70,7 @@ class CustomEnv(Env):
 			id_car = str(i)
 			traci.vehicle.addFull(id_car, 'routeEgo', depart=None, departPos=str(i*45+30), departSpeed='0', departLane='random', typeID='vType1')
 			traci.vehicle.setSpeedMode(id_car, int('00000',2))
-			traci.vehicle.setSpeed(id_car, 0.00001)
+			traci.vehicle.setSpeed(id_car, 3)
 			traci.vehicle.setLaneChangeMode(id_car, 0)
 			traci.simulationStep()
 			i+=1
@@ -79,7 +84,7 @@ class CustomEnv(Env):
 
 		reward = 0
 
-		if not done:            
+		if not done:
 			self._action(action)
 			self.state = self._observation()
 			self._collision()
@@ -96,7 +101,6 @@ class CustomEnv(Env):
 		return self.state, reward, done, info
 
 	def reset(self):
-
 		self.adversaries()
 
 		try:
@@ -141,7 +145,7 @@ class CustomEnv(Env):
 		reward = 0
 		obs = self._get_vehicles_obs()
 		lane_ego = traci.vehicle.getLaneIndex(self.egoCarID)
-		dis_inf = obs[0]
+		dis_inf = obs[4]
 		dis_cent = obs[2]
 		if lane_ego == 0: # ego is in the bottom lane
 			if dis_inf >= 0.9:
@@ -163,7 +167,7 @@ class CustomEnv(Env):
 	def _reward(self):
 		reward = 0
 		done = False
-		timeout = 160 # 137 es lo maximo que deberia tardar
+		timeout = 145 # 137 es lo maximo que deberia tardar
 		k_lane = 0.1
 
 		time = traci.simulation.getTime() - self.time_reset
@@ -181,11 +185,12 @@ class CustomEnv(Env):
 			done = True
 			
 		if not done:
-			k_lane = self._calculate_best_trajectory() #self._lane_reward()
+			k_lane = self._calculate_best_trajectory() # self._lane_reward() #
 			v = traci.vehicle.getSpeed(self.egoCarID)
-			reward = round(v * (k_lane), 2)
-			if v < 4.5:
+			reward = round(v * (k_lane + self.k_overtake), 2)
+			if v < 4.5 and k_lane == 0:
 				reward = 0
+			#print(f"reward: {reward}")
 
 		self.total_reward += reward
 		if done:
@@ -195,7 +200,7 @@ class CustomEnv(Env):
 
 	def _addEgoCar(self):
 		# delay allows car to distribute
-		for i in range(np.random.randint(40,50)):
+		for i in range(np.random.randint(10,20)):
 			traci.simulationStep()
 		
 		#Start the ego vehicle 
@@ -250,17 +255,32 @@ class CustomEnv(Env):
 			adver_bottom.sort(key=lambda x: x[1])
 			adver_center.sort(key=lambda x: x[1])
 			adver_top.sort(key=lambda x: x[1])
+
+			#Check if overtaking has been done
+			if self._prev_adver_bottom != [] or self._prev_adver_center != [] or self._prev_adver_top != []:
+				if (self._prev_adver_bottom != [] and adver_bottom == []) or (self._prev_adver_bottom != [] and adver_bottom != [] and adver_bottom[0][0] != self._prev_adver_bottom[0][0] and self._prev_adver_bottom[0][0] in traci.vehicle.getIDList()) \
+					or (self._prev_adver_center != [] and adver_center == []) or (self._prev_adver_center != [] and adver_center != [] and adver_center[0][0] != self._prev_adver_center[0][0] and self._prev_adver_center[0][0] in traci.vehicle.getIDList()) \
+					or (self._prev_adver_top != [] and adver_top == []) or (self._prev_adver_top != [] and adver_top != [] and adver_top[0][0] != self._prev_adver_top[0][0] and self._prev_adver_top[0][0] in traci.vehicle.getIDList()):
+					self.k_overtake = 15
+				else:
+					self.k_overtake = 0
+
+			#Store the previous values for reward
+			self._prev_adver_bottom = adver_bottom
+			self._prev_adver_center = adver_center
+			self._prev_adver_top = adver_top
 			
+			if adver_top != []:
+				d_rl = 1 - abs((adver_top[0][1] - x_ego) / self.max_range)
+				v_rl = adver_top[0][3] / v_max
 			if adver_center != []:
 				d_ll = 1 - abs((adver_center[0][1] - x_ego) / self.max_range)
 				v_ll = adver_center[0][3] / v_max
 			if adver_bottom != []:
 				d_cl =  1 - abs((adver_bottom[0][1] - x_ego) / self.max_range)
 				v_cl = adver_bottom[0][3] / v_max
-			if adver_top != []:
-				d_rl = 1 - abs((adver_top[0][1] - x_ego) / self.max_range)
-				v_rl = adver_top[0][3] / v_max
-		res = np.array([d_cl, v_cl, d_ll, v_ll, d_rl, v_rl])
+			
+		res = np.array([d_rl, v_rl,d_ll, v_ll, d_cl, v_cl,])
 		for i in range(len(res)):
 			res[i] = self._round_number(res[i])
 		return res
@@ -280,7 +300,7 @@ class CustomEnv(Env):
 			#print(self.state["adversaries"])
 			if self.egoCarID in traci.vehicle.getIDList():
 				lane = traci.vehicle.getLaneIndex(self.egoCarID)
-			v_ego = self._round_number(traci.vehicle.getSpeed(self.egoCarID) / v_max)
+			v_ego = round (traci.vehicle.getSpeed(self.egoCarID), 2)
 			self.state["ego"] = np.array([lane, v_ego])
 			#print(self.state["ego"])
 
@@ -288,12 +308,13 @@ class CustomEnv(Env):
 
 	def _action(self, action):
 		index = traci.vehicle.getLaneIndex(self.egoCarID)
-		if action == 2 and index < 2: #Change Left
-			index += 1
-			traci.vehicle.changeLane(self.egoCarID, index, 0)
-
 		if action == 0 and index > 0: #Change Right
 			index -= 1
+			traci.vehicle.changeLane(self.egoCarID, index, 0)
+
+		
+		if action == 2 and index < 2: #Change Left
+			index += 1
 			traci.vehicle.changeLane(self.egoCarID, index, 0)
 
 	def _collision(self):
