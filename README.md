@@ -8,14 +8,11 @@ cd overtaking/src
 ```
 
 ### Ejecutar adelantamiento en linea
-
-    
-    
     python3 test.py --env=overtakingOneLine --scenario='2023-12-06 10:47:11.692484'
-    
-    
+---
 
-
+### entrenar
+    python3 train.py --env=overtakingOneLine --model=TRPO
 ---
 
 ### Listar entrenamientos
