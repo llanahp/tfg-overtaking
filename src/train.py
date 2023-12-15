@@ -34,7 +34,7 @@ def setUpArgs():
 		'--pretrained',
 		metavar='NAME',
 		default='no',
-		help='env (default: "no")')
+		help='pretrained (default: "no")')
 	argparser.add_argument(
 		'--timesteps',
 		metavar='N',
@@ -46,6 +46,12 @@ def setUpArgs():
 		metavar='NAME',
 		default='False',
 		help='verbose (default: "False")')
+	argparser.add_argument(
+		'--compPretrained',
+		metavar='NAME',
+		default='no',
+		help='encompPretrainedv (default: "no")')
+		
 	return argparser.parse_args()
 
 def defineLogs(args):
@@ -114,11 +120,31 @@ def createEnv(args, model_dir):
 		)   
 		policy = "MultiInputPolicy"
 	elif args.env == "Highway":
-		policy_kwargs = dict(
-		features_extractor_class=CustomCombinedExtractorOneState,
-		net_arch= dict(pi=[256, 256], vf=[256, 256])
-
-		)   
+		if (args.model == "PPO"):
+			policy_kwargs = dict(
+			features_extractor_class=CustomCombinedExtractorOneState,
+			net_arch = dict(pi=[256, 256], vf=[256, 256])
+			)
+		elif (args.model == "A2C"):
+			policy_kwargs = dict(
+			features_extractor_class=CustomCombinedExtractorOneState,
+			net_arch = dict(pi=[128, 128], vf=[128, 128], qf=[128, 128])
+			)
+		elif (args.model == "SAC"):
+			policy_kwargs = dict(
+			features_extractor_class=CustomCombinedExtractorOneState,
+			net_arch = dict(pi=[128, 128], vf=[128, 128], qf=[128, 128])
+			)
+		elif (args.model == "DQN"):
+			policy_kwargs = dict(
+			features_extractor_class=CustomCombinedExtractorOneState,
+			net_arch = [64, 128, 64]
+			)
+		elif (args.model == "TRPO"):
+			policy_kwargs = dict(
+			features_extractor_class=CustomCombinedExtractorOneState,
+			net_arch = dict(pi=[256, 256], vf=[256, 256])
+			)
 		policy = "MultiInputPolicy"
 	elif args.env == "SMARTS":
 		policy_kwargs = dict(
@@ -221,12 +247,17 @@ def info(args):
 	print("\n----->Model:",args.model)
 	print("----->Network: ",args.env)
 	print("----->Pretrained: ",args.pretrained)
+	print("----->CompPretrained: ",args.compPretrained)
 	print()
 
 def createModel(args, policy, policy_kwargs, env, log_dir, model_dir):
-	if args.model == "PPO": 
+	if args.model == "PPO":
 		if args.pretrained == "no":
 			model = PPO(policy, env, verbose = 1, policy_kwargs=policy_kwargs, tensorboard_log=log_dir)
+		elif args.compPretrained != "no":
+			path = args.compPretrained
+			print("pretrained: ",path)
+			model = PPO.load(path, env=env)
 		else:
 			path = os.path.join(model_dir, '{}_{}_'.format(args.env, args.model)) + args.pretrained
 			print("pretrained: ",path)
@@ -235,6 +266,10 @@ def createModel(args, policy, policy_kwargs, env, log_dir, model_dir):
 	elif args.model == "A2C":
 		if args.pretrained == "no":
 			model = A2C(policy, env, verbose = 1, policy_kwargs=policy_kwargs, tensorboard_log=log_dir)
+		elif args.compPretrained != "no":
+			path = args.compPretrained
+			print("pretrained: ",path)
+			model = A2C.load(path, env=env)
 		else:
 			path = os.path.join(model_dir, '{}_{}_'.format(args.env, args.model)) + args.pretrained
 			print("pretrained: ",path)
@@ -243,6 +278,10 @@ def createModel(args, policy, policy_kwargs, env, log_dir, model_dir):
 	elif args.model == "SAC":
 		if args.pretrained == "no":
 			model = SAC(policy, env, verbose = 1, policy_kwargs=policy_kwargs, tensorboard_log=log_dir)
+		elif args.compPretrained != "no":
+			path = args.compPretrained
+			print("pretrained: ",path)
+			model = SAC.load(path, env=env)
 		else:
 			path = os.path.join(model_dir, '{}_{}_'.format(args.env, args.model)) + args.pretrained
 			print("pretrained: ",path)
@@ -255,6 +294,10 @@ def createModel(args, policy, policy_kwargs, env, log_dir, model_dir):
 			gamma=0.95,
 			batch_size=32,
 			)
+		elif args.compPretrained != "no":
+			path = args.compPretrained
+			print("pretrained: ",path)
+			model = DQN.load(path, env=env)
 		else:
 			path = os.path.join(model_dir, '{}_{}_'.format(args.env, args.model)) + args.pretrained
 			print("pretrained: ",path)
@@ -263,6 +306,10 @@ def createModel(args, policy, policy_kwargs, env, log_dir, model_dir):
 	elif args.model == "TRPO":
 		if args.pretrained == "no":
 			model = TRPO(policy, env, verbose = 1, policy_kwargs=policy_kwargs, tensorboard_log=log_dir)
+		elif args.compPretrained != "no":
+			path = args.compPretrained
+			print("pretrained: ",path)
+			model = TRPO.load(path, env=env)
 		else:
 			path = os.path.join(model_dir, '{}_{}_'.format(args.env, args.model)) + args.pretrained
 			print("pretrained: ",path)

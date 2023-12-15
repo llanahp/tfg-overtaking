@@ -53,6 +53,11 @@ def setUpArgs():
 		metavar='NAME',
 		default='False',
 		help='verbose (default: "False")')
+	argparser.add_argument(
+		'--compPretrained',
+		metavar='NAME',
+		default='no',
+		help='encompPretrainedv (default: "no")')
 	return argparser.parse_args()
 
 def createEnviroment(args):
@@ -93,7 +98,10 @@ def createEnviroment(args):
 def defineModel(args, env):
 	if args.eval == "False":
 		# Define the model paths
-		Path = os.path.join('Training', 'Models', '{}_{}_{}'.format(args.env, args.model, args.scenario))
+		if args.compPretrained != "no":
+			Path = os.path.join('Training', 'Models', args.compPretrained)
+		else:
+			Path = os.path.join('Training', 'Models', '{}_{}_{}'.format(args.env, args.model, args.scenario))
 		print("Path: ",Path)
 		print("args.model: ",args.model)
 		if args.model == "PPO":
@@ -126,7 +134,7 @@ def testAgent(env, args, model, episodes):
 		score = 0
 
 		while not done:
-			action = 0 #random.randint(0, 2)
+			action = 2 #random.randint(0, 2)
 			if args.eval == "False":
 				action, _ = model.predict(obs)
 			if (args.verbose == "True"):
@@ -159,6 +167,7 @@ def main():
 	print("\n----->Model:",args.model)
 	print("----->Network: ",args.env)
 	print("----->scenario: ",args.scenario)
+	print("----->compPretrained: ",args.compPretrained)
 	print()
 
 	model = None

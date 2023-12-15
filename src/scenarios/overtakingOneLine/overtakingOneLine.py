@@ -31,7 +31,7 @@ class CustomEnv(Env):
 		self.N_actions = 3
 		self.action_space = Discrete(self.N_actions)
 		self.obs_space_ego = 2
-		self.obs_space_adver = 8
+		self.obs_space_adver = 6
 		self.max_range = 100
 		self.observation_space = Dict({'ego':Box(0,1,shape=(self.obs_space_ego,)), 'adversaries':Box(0,1,shape=(self.obs_space_adver,)),})
 		self.state = self.observation_space.sample()
@@ -218,8 +218,7 @@ class CustomEnv(Env):
 			if overtake_complete != 0 and v == 0:
 				v = traci.vehicle.getSpeed(self.egoCarID)
 			reward = round(v * (is_inside + overtake_complete), 2)
-			'''if v < 4.5:
-				reward = 0'''
+
 			
 		self.total_reward += reward
 		if done:
@@ -277,7 +276,7 @@ class CustomEnv(Env):
 		d_if=d_is=d_of=d_os= 0
 		v_if=v_of=v_is=v_os= 0
 		v_ego = 1
-		lane = -1
+		lane = 2
 		v_max = 6
 		self.state["adversaries"] = np.array([1] * self.obs_space_adver)
 		self.state["ego"] = np.array([self.obs_space_ego])
@@ -298,18 +297,16 @@ class CustomEnv(Env):
 				if len(adver_opposite_line) > 1:
 					d_os = 1 - abs((adver_opposite_line[1][1] - x_ego) / self.max_range)
 					v_os = adver_opposite_line[1][3] / v_max
-			self.state["adversaries"] = np.array([d_if, v_if, d_is, v_is , d_of, v_of, d_os, v_os])
+			self.state["adversaries"] = np.array([d_if, v_if, d_is, v_is , d_of, v_of])
 			
 			for i in range(len(self.state["adversaries"])):
 				if self.state["adversaries"][i] != int(self.state["adversaries"][i]) and self.state["adversaries"][i] != 1.0 and self.state["adversaries"][i] != 0.0:
-					self.state["adversaries"][i] = round(self.state["adversaries"][i], 1)
+					self.state["adversaries"][i] = round(self.state["adversaries"][i], 2)
 
 			#print(self.state["adversaries"])
-			if self.egoCarID in traci.vehicle.getIDList():
-				lane = 0
-				if traci.vehicle.getLaneID(self.egoCarID) == "E0_0":
-					lane = 1
-			v_ego = round(traci.vehicle.getSpeed(self.egoCarID) / v_max, 2)
+			if traci.vehicle.getLaneID(self.egoCarID) == "E0_0":
+				lane = 1
+			v_ego = traci.vehicle.getSpeed(self.egoCarID) / v_max
 			self.state["ego"] = np.array([lane, v_ego])
 
 		return self.state
