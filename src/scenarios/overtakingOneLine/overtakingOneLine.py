@@ -77,7 +77,7 @@ class CustomEnv(Env):
 			traci.simulationStep()
 			i+=1
 		#add adversary cars in the opposite line
-		for i in range(10, 15):
+		'''for i in range(10, 15):
 			try:
 				if str(i) in traci.vehicle.getIDList():
 					traci.vehicle.remove(str(i))
@@ -90,7 +90,7 @@ class CustomEnv(Env):
 			traci.vehicle.setSpeed(id_car, 2)
 			traci.vehicle.setLaneChangeMode(id_car, 0)
 			traci.simulationStep()
-			i+=1
+			i+=1'''
 
 	def step(self, action):
 		done = True

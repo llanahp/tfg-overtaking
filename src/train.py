@@ -50,7 +50,7 @@ def setUpArgs():
 		'--compPretrained',
 		metavar='NAME',
 		default='no',
-		help='encompPretrainedv (default: "no")')
+		help='encompPretrained (default: "no")')
 		
 	return argparser.parse_args()
 
@@ -64,20 +64,8 @@ def defineLogs(args):
 
 def createEnv(args, model_dir):
 	diccionario = {
-    "Intersection": "scenarios.Intersection.IntersectionSumoEnv",
-    "IntersectionFeaturesOne": "scenarios.Intersection.IntersectionSumoEnvFeaturesOneState",
-    "IntersectionFeaturesMulti": "scenarios.Intersection.IntersectionSumoEnvFeaturesMultiState",
-    "IntersectionCarlaFeaturesOne": "scenarios.Intersection.IntersectionCarlaEnvFeaturesOneState",
-    "IntersectionCarlaFeaturesMulti": "scenarios.Intersection.IntersectionCarlaEnvFeaturesMultiState",
     "Highway": "scenarios.Highway.HighwaySumoEnvFeatures",
-    "IntersectionRecurrent": "scenarios.Intersection.IntersectionSumoEnvFeaturesMultiState",
-    "SMARTS": "scenarios.SMARTS.smartsEnv",
-    "MultiSMARTS": "scenarios.SMARTS.smartsEnvMulti",
-    "TransformersSMARTS": "scenarios.SMARTS.smartsEnvTransformers",
-    "MultiCARLA": "scenarios.CARLA.carlaEnvMulti",
-    "overtaking": "scenarios.overtaking.IntersectionSumoEnvFeaturesOneState",
-	"overtakingLine": "scenarios.overtakingLine.IntersectionSumoEnvFeaturesOneState",
-	"overtakingOneLine": "scenarios.overtakingOneLine.overtakingOneLine",
+    "overtakingOneLine": "scenarios.overtakingOneLine.overtakingOneLine",
 	}
 
 	if args.env in diccionario:
@@ -90,36 +78,7 @@ def createEnv(args, model_dir):
 	else:
 		print("Env not found")
 
-	if args.env == "Intersection":
-		policy_kwargs = dict(net_arch=(dict(pi=[128, 128], vf=[128, 128])))
-		policy = "MlpPolicy"
-	elif args.env == "IntersectionFeaturesOne":
-		policy_kwargs = dict(
-		features_extractor_class=CustomCombinedExtractorOneState,
-		net_arch=(dict(pi=[128, 128], vf=[128, 128]))
-		)   
-		policy = "MultiInputPolicy"
-	elif args.env == "IntersectionFeaturesMulti":
-		policy_kwargs = dict(
-		# features_extractor_class=CustomCombinedExtractorMultiState,
-		net_arch=(dict(pi=[128, 128], vf=[128, 128]))
-		)   
-		policy = "MultiInputPolicy"
-	elif args.env == "IntersectionRecurrent":
-		policy = "MultiInputLstmPolicy"
-	elif args.env == "IntersectionCarlaFeaturesOne":
-		policy_kwargs = dict(
-		features_extractor_class=CustomCombinedExtractorOneState,
-		net_arch=(dict(pi=[128, 128], vf=[128, 128]))
-		)   
-		policy = "MultiInputPolicy"
-	elif args.env == "IntersectionCarlaFeaturesMulti":
-		policy_kwargs = dict(
-		features_extractor_class=CustomCombinedExtractorMultiState,
-		net_arch=(dict(pi=[128, 128], vf=[128, 128]))
-		)   
-		policy = "MultiInputPolicy"
-	elif args.env == "Highway":
+	if args.env == "Highway":
 		if (args.model == "PPO"):
 			policy_kwargs = dict(
 			features_extractor_class=CustomCombinedExtractorOneState,
@@ -143,74 +102,9 @@ def createEnv(args, model_dir):
 		elif (args.model == "TRPO"):
 			policy_kwargs = dict(
 			features_extractor_class=CustomCombinedExtractorOneState,
-			net_arch = dict(pi=[256, 256], vf=[256, 256])
+			net_arch = dict(pi=[512, 512], vf=[512, 512])
 			)
 		policy = "MultiInputPolicy"
-	elif args.env == "SMARTS":
-		policy_kwargs = dict(
-		features_extractor_class=CustomCombinedExtractorSmarts,
-		net_arch=(dict(pi=[128, 128], vf=[128, 128]))
-		)   
-		policy = "MultiInputPolicy"
-	elif args.env == "MultiSMARTS":
-		policy_kwargs = dict(
-		features_extractor_class=CustomCombinedExtractorSmartsMulti,
-		net_arch=(dict(pi=[128, 128], vf=[128, 128]))
-		)   
-		policy = "MultiInputPolicy"
-	elif args.env == "TransformersSMARTS":
-		policy_kwargs = dict(
-		net_arch=(dict(pi=[128, 128], vf=[128, 128]))
-		)   
-		policy = "MlpLstmPolicy"
-	elif args.env == "MultiCARLA":
-		policy_kwargs = dict(
-		features_extractor_class=CustomCombinedExtractorSmartsMulti,
-		net_arch=(dict(pi=[128, 128], vf=[128, 128]))
-		)   
-		policy = "MultiInputPolicy"
-	elif args.env == "overtaking":
-		if (args.model == "PPO"):
-			policy_kwargs = dict(
-			features_extractor_class=CustomCombinedExtractorOneState,
-			net_arch = dict(pi=[128, 128], vf=[128, 128])
-			)
-		elif (args.model == "A2C"):
-			policy_kwargs = dict(
-			features_extractor_class=CustomCombinedExtractorOneState,
-			net_arch = dict(pi=[128, 128], vf=[128, 128], qf=[128, 128])
-			)
-		elif (args.model == "SAC"):
-			policy_kwargs = dict(
-			features_extractor_class=CustomCombinedExtractorOneState,
-			net_arch = dict(pi=[128, 128], vf=[128, 128], qf=[128, 128])
-			)
-		elif (args.model == "DQN"):
-			policy_kwargs = dict(
-			features_extractor_class=CustomCombinedExtractorOneState,
-			net_arch = [64, 128, 64]
-			)
-	elif args.env == "overtakingLine":
-		if (args.model == "PPO"):
-			policy_kwargs = dict(
-			features_extractor_class=CustomCombinedExtractorOneState,
-			net_arch = dict(pi=[256, 256], vf=[256, 256])
-			)
-		elif (args.model == "A2C"):
-			policy_kwargs = dict(
-			features_extractor_class=CustomCombinedExtractorOneState,
-			net_arch = dict(pi=[256, 256], vf=[256, 256])
-			)
-		elif (args.model == "SAC"):
-			policy_kwargs = dict(
-			features_extractor_class=CustomCombinedExtractorOneState,
-			net_arch = dict(pi=[128, 128], vf=[128, 128], qf=[128, 128])
-			)
-		elif (args.model == "DQN"):
-			policy_kwargs = dict(
-			features_extractor_class=CustomCombinedExtractorOneState,
-			net_arch = [256, 256]
-			)
 	elif args.env == "overtakingOneLine":
 		if (args.model == "PPO"):
 			policy_kwargs = dict(
@@ -254,6 +148,8 @@ def createModel(args, policy, policy_kwargs, env, log_dir, model_dir):
 	if args.model == "PPO":
 		if args.pretrained == "no":
 			model = PPO(policy, env, verbose = 1, policy_kwargs=policy_kwargs, tensorboard_log=log_dir)
+		elif args.pretrained != "no":
+			model = PPO(policy, env, verbose = 1, policy_kwargs=policy_kwargs, tensorboard_log=log_dir)
 		elif args.compPretrained != "no":
 			path = args.compPretrained
 			print("pretrained: ",path)
@@ -265,6 +161,8 @@ def createModel(args, policy, policy_kwargs, env, log_dir, model_dir):
 
 	elif args.model == "A2C":
 		if args.pretrained == "no":
+			model = A2C(policy, env, verbose = 1, policy_kwargs=policy_kwargs, tensorboard_log=log_dir)
+		elif args.pretrained != "no":
 			model = A2C(policy, env, verbose = 1, policy_kwargs=policy_kwargs, tensorboard_log=log_dir)
 		elif args.compPretrained != "no":
 			path = args.compPretrained
@@ -278,6 +176,8 @@ def createModel(args, policy, policy_kwargs, env, log_dir, model_dir):
 	elif args.model == "SAC":
 		if args.pretrained == "no":
 			model = SAC(policy, env, verbose = 1, policy_kwargs=policy_kwargs, tensorboard_log=log_dir)
+		elif args.pretrained != "no":
+			model = SAC(policy, env, verbose = 1, policy_kwargs=policy_kwargs, tensorboard_log=log_dir)
 		elif args.compPretrained != "no":
 			path = args.compPretrained
 			print("pretrained: ",path)
@@ -289,6 +189,8 @@ def createModel(args, policy, policy_kwargs, env, log_dir, model_dir):
 
 	elif args.model == "DQN":
 		if args.pretrained == "no":
+			model = DQN(policy, env, verbose = 1, policy_kwargs=policy_kwargs, tensorboard_log=log_dir)
+		elif args.pretrained != "no":
 			model = DQN(policy, env, verbose = 1, policy_kwargs=policy_kwargs, tensorboard_log=log_dir,
 			learning_rate=0.01,
 			gamma=0.95,
@@ -306,9 +208,12 @@ def createModel(args, policy, policy_kwargs, env, log_dir, model_dir):
 	elif args.model == "TRPO":
 		if args.pretrained == "no":
 			model = TRPO(policy, env, verbose = 1, policy_kwargs=policy_kwargs, tensorboard_log=log_dir)
+		elif args.pretrained != "no":
+			model = TRPO(policy, env, verbose = 1, policy_kwargs=policy_kwargs, tensorboard_log=log_dir)
+			print("pretrained--->", args.pretrained)
 		elif args.compPretrained != "no":
-			path = args.compPretrained
-			print("pretrained: ",path)
+			path = os.path.join(model_dir,args.compPretrained)
+			print("compPretrained: ",path)
 			model = TRPO.load(path, env=env)
 		else:
 			path = os.path.join(model_dir, '{}_{}_'.format(args.env, args.model)) + args.pretrained

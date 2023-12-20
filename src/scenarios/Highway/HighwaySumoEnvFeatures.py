@@ -279,7 +279,7 @@ class CustomEnv(Env):
 				d_cl =  1 - abs((adver_bottom[0][1] - x_ego) / self.max_range)
 				v_cl = adver_bottom[0][3] / v_max
 			
-		res = np.array([d_rl, v_rl,d_ll, v_ll, d_cl, v_cl,])
+		res = np.array([d_rl, v_rl,d_ll, v_ll, d_cl, v_cl])
 		for i in range(len(res)):
 			res[i] = self._round_number(res[i])
 		return res
