@@ -87,12 +87,12 @@ def createEnv(args, model_dir):
 		elif (args.model == "A2C"):
 			policy_kwargs = dict(
 			features_extractor_class=CustomCombinedExtractorOneState,
-			net_arch = dict(pi=[128, 128], vf=[128, 128], qf=[128, 128])
+			net_arch = dict(pi=[256, 256], vf=[256, 256], qf=[256, 256])
 			)
 		elif (args.model == "SAC"):
 			policy_kwargs = dict(
 			features_extractor_class=CustomCombinedExtractorOneState,
-			net_arch = dict(pi=[128, 128], vf=[128, 128], qf=[128, 128])
+			net_arch = dict(pi=[256, 256], vf=[256, 256], qf=[256, 256])
 			)
 		elif (args.model == "DQN"):
 			policy_kwargs = dict(
@@ -102,7 +102,7 @@ def createEnv(args, model_dir):
 		elif (args.model == "TRPO"):
 			policy_kwargs = dict(
 			features_extractor_class=CustomCombinedExtractorOneState,
-			net_arch = dict(pi=[512, 512], vf=[512, 512])
+			net_arch = dict(pi=[256, 256], vf=[256, 256])
 			)
 		policy = "MultiInputPolicy"
 	elif args.env == "overtakingOneLine":
@@ -137,19 +137,22 @@ def createEnv(args, model_dir):
 	env = Monitor(env, model_dir)
 	return policy, policy_kwargs, env
 
-def info(args):
+def info(args, save_path):
 	print("\n----->Model:",args.model)
 	print("----->Network: ",args.env)
 	print("----->Pretrained: ",args.pretrained)
 	print("----->CompPretrained: ",args.compPretrained)
+	print("----->save_path: ",save_path)
 	print()
 
-def createModel(args, policy, policy_kwargs, env, log_dir, model_dir):
+def createModel(args, policy, policy_kwargs, env, log_dir, model_dir,save_path):
 	if args.model == "PPO":
-		if args.pretrained == "no":
+		if args.pretrained == "no" and args.compPretrained == "no":
 			model = PPO(policy, env, verbose = 1, policy_kwargs=policy_kwargs, tensorboard_log=log_dir)
 		elif args.pretrained != "no":
-			model = PPO(policy, env, verbose = 1, policy_kwargs=policy_kwargs, tensorboard_log=log_dir)
+			path = os.path.join(model_dir, '{}_{}_'.format(args.env, args.model)) + args.pretrained
+			print("pretrained--->", path)
+			model = PPO.load(path, env=env)
 		elif args.compPretrained != "no":
 			path = args.compPretrained
 			print("pretrained: ",path)
@@ -159,11 +162,13 @@ def createModel(args, policy, policy_kwargs, env, log_dir, model_dir):
 			print("pretrained: ",path)
 			model = PPO.load(path, env=env)
 
-	elif args.model == "A2C":
-		if args.pretrained == "no":
+	elif args.model == "A2C" :
+		if args.pretrained == "no" and args.compPretrained == "no":
 			model = A2C(policy, env, verbose = 1, policy_kwargs=policy_kwargs, tensorboard_log=log_dir)
 		elif args.pretrained != "no":
-			model = A2C(policy, env, verbose = 1, policy_kwargs=policy_kwargs, tensorboard_log=log_dir)
+			path = os.path.join(model_dir, '{}_{}_'.format(args.env, args.model)) + args.pretrained
+			print("pretrained--->", path)
+			model = A2C.load(path, env=env)
 		elif args.compPretrained != "no":
 			path = args.compPretrained
 			print("pretrained: ",path)
@@ -174,10 +179,12 @@ def createModel(args, policy, policy_kwargs, env, log_dir, model_dir):
 			model = A2C.load(path, env=env)
 	
 	elif args.model == "SAC":
-		if args.pretrained == "no":
+		if args.pretrained == "no" and args.compPretrained == "no":
 			model = SAC(policy, env, verbose = 1, policy_kwargs=policy_kwargs, tensorboard_log=log_dir)
 		elif args.pretrained != "no":
-			model = SAC(policy, env, verbose = 1, policy_kwargs=policy_kwargs, tensorboard_log=log_dir)
+			path = os.path.join(model_dir, '{}_{}_'.format(args.env, args.model)) + args.pretrained
+			print("pretrained--->", path)
+			model = SAC.load(path, env=env)
 		elif args.compPretrained != "no":
 			path = args.compPretrained
 			print("pretrained: ",path)
@@ -188,14 +195,12 @@ def createModel(args, policy, policy_kwargs, env, log_dir, model_dir):
 			model = SAC.load(path, env=env)
 
 	elif args.model == "DQN":
-		if args.pretrained == "no":
+		if args.pretrained == "no" and args.compPretrained == "no":
 			model = DQN(policy, env, verbose = 1, policy_kwargs=policy_kwargs, tensorboard_log=log_dir)
 		elif args.pretrained != "no":
-			model = DQN(policy, env, verbose = 1, policy_kwargs=policy_kwargs, tensorboard_log=log_dir,
-			learning_rate=0.01,
-			gamma=0.95,
-			batch_size=32,
-			)
+			path = os.path.join(model_dir, '{}_{}_'.format(args.env, args.model)) + args.pretrained
+			print("pretrained--->", path)
+			model = DQN.load(path, env=env)
 		elif args.compPretrained != "no":
 			path = args.compPretrained
 			print("pretrained: ",path)
@@ -205,14 +210,21 @@ def createModel(args, policy, policy_kwargs, env, log_dir, model_dir):
 			print("pretrained: ",path)
 			model = DQN.load(path, env=env)
 
+			'''model = DQN(policy, env, verbose = 1, policy_kwargs=policy_kwargs, tensorboard_log=log_dir,
+			learning_rate=0.01,
+			gamma=0.95,
+			batch_size=32,
+			)'''
+
 	elif args.model == "TRPO":
-		if args.pretrained == "no":
+		if args.pretrained == "no" and args.compPretrained == "no":
 			model = TRPO(policy, env, verbose = 1, policy_kwargs=policy_kwargs, tensorboard_log=log_dir)
 		elif args.pretrained != "no":
-			model = TRPO(policy, env, verbose = 1, policy_kwargs=policy_kwargs, tensorboard_log=log_dir)
-			print("pretrained--->", args.pretrained)
+			path = os.path.join(model_dir, '{}_{}_'.format(args.env, args.model)) + args.pretrained
+			print("pretrained--->", path)
+			model = TRPO.load(path, env=env)
 		elif args.compPretrained != "no":
-			path = os.path.join(model_dir,args.compPretrained)
+			path = os.path.join(model_dir, args.compPretrained)
 			print("compPretrained: ",path)
 			model = TRPO.load(path, env=env)
 		else:
@@ -232,9 +244,9 @@ def main():
 	# Callback definition
 	callback = SaveOnBestTrainingRewardCallback(check_freq=20, log_dir=model_dir, save_path=save_path)
 
-	info(args)
+	info(args, save_path)
 
-	model = createModel(args, policy, policy_kwargs, env, log_dir, model_dir)
+	model = createModel(args, policy, policy_kwargs, env, log_dir, model_dir, save_path)
 
 	if	args.verbose == "True":
 		print("Model Policy:\n",model.policy)

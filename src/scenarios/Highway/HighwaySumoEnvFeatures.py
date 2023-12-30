@@ -1,8 +1,7 @@
 # Import GYM 
 from turtle import end_fill, st
 from gym import Env
-from gym.spaces import Discrete, Box, Dict, Tuple, MultiBinary, MultiDiscrete
-import uuid
+from gym.spaces import Discrete, Box, Dict
 from colorama import Fore, Back, Style, init
 from math import log
 from operator import ne
@@ -26,7 +25,7 @@ import traci
 
 class CustomEnv(Env):
 	def __init__(self, render=False):
-		self.action_space = Discrete(3) #Box(low=0, high=1, shape=(1,))
+		self.action_space =Box(low=0, high=1, shape=(1,)) # Discrete(3) #
 		self.obs_space_ego = 2
 		self.obs_space_adver = 6
 		self.max_range = 100
@@ -37,6 +36,8 @@ class CustomEnv(Env):
 		self._prev_adver_center = []
 		self._prev_adver_top = []
 		self.k_overtake = 0
+		self.actions = 0
+		self.prev_action = -1
 		sumo = "sumo-gui" if render else "sumo"
 
 
@@ -71,7 +72,7 @@ class CustomEnv(Env):
 			random_space = np.random.randint(7, 30)
 			traci.vehicle.addFull(id_car, 'routeEgo', depart=None, departPos=str(i*45+random_space), departSpeed='0', departLane='random', typeID='vType1')
 			traci.vehicle.setSpeedMode(id_car, int('00000',2))
-			traci.vehicle.setSpeed(id_car, 2)
+			traci.vehicle.setSpeed(id_car, 2) #2
 			traci.vehicle.setLaneChangeMode(id_car, 0)
 			traci.simulationStep()
 			i+=1
@@ -97,7 +98,7 @@ class CustomEnv(Env):
 			self.reset()
 
 		traci.simulationStep()
-		info = {'time' : traci.simulation.getTime() - self.time_reset}
+		info = {'time' : traci.simulation.getTime() - self.time_reset, 'actions' : self.actions}
 
 		return self.state, reward, done, info
 
@@ -168,7 +169,7 @@ class CustomEnv(Env):
 	def _reward(self):
 		reward = 0
 		done = False
-		timeout = 155 # 137 es lo maximo que deberia tardar
+		timeout = 170 # 155
 
 		time = traci.simulation.getTime() - self.time_reset
 
@@ -292,16 +293,25 @@ class CustomEnv(Env):
 		self.state["ego"] = np.array(self.obs_space_ego)
 		if self.egoCarID in traci.vehicle.getIDList():
 			self.state["adversaries"] = self._get_vehicles_obs()
-			#print(self.state["adversaries"])
 
 			lane = (traci.vehicle.getLaneIndex(self.egoCarID) + 1)  # 1, 2, 3
-			v_ego = traci.vehicle.getSpeed(self.egoCarID) / v_max
-			self.state["ego"] = np.array([lane, v_ego])
-			#print(self.state["ego"])
+			v_ego = round(traci.vehicle.getSpeed(self.egoCarID) / v_max,2)
+		self.state["ego"] = np.array([lane, v_ego])
+		#print(self.state["ego"])
 
 		return self.state
 
 	def _action(self, action):
+		
+		if action <= 0.33:
+			action = 0
+		elif action <= 0.66:
+			action = 1
+		else:
+			action = 2
+		if self.prev_action == -1 or (self.prev_action != action and action != 1):
+			self.actions = self.actions + 1
+			self.prev_action = action
 		index = traci.vehicle.getLaneIndex(self.egoCarID)
 		if action == 0 and index > 0: #Change Right
 			index -= 1

@@ -27,9 +27,8 @@ import traci
 
 class CustomEnv(Env):
 	def __init__(self, render=False):
-		self.action_space = Discrete(3) #Box(low=0, high=1, shape=(1,))
+		self.action_space = Discrete(3) #Box(low=0, high=1, shape=(1,)) #
 		self.N_actions = 3
-		self.action_space = Discrete(self.N_actions)
 		self.obs_space_ego = 2
 		self.obs_space_adver = 6
 		self.max_range = 100
@@ -37,6 +36,8 @@ class CustomEnv(Env):
 		self.state = self.observation_space.sample()
 		self.timestep = 0.1
 		self.inside_cars = []
+		self.actions = 0
+		self.prev_action = -1
 		sumo = "sumo-gui" if render else "sumo"
 
 		sumoCmd = [
@@ -69,28 +70,28 @@ class CustomEnv(Env):
 			except:
 				pass
 			id_car = str(i)
-			offset = random.randint(10, 80)
+			offset = random.randint(25, 65)
 			traci.vehicle.addFull(id_car, 'routeEgo', depart=None, departPos=str(i*90+offset), departSpeed='0', departLane='random', typeID='vType1')
 			traci.vehicle.setSpeedMode(id_car, int('00000',2))
-			traci.vehicle.setSpeed(id_car, 3)
+			traci.vehicle.setSpeed(id_car, 3)# 3
 			traci.vehicle.setLaneChangeMode(id_car, 0)
 			traci.simulationStep()
 			i+=1
 		#add adversary cars in the opposite line
-		'''for i in range(10, 15):
+		for i in range(10, 15):
 			try:
 				if str(i) in traci.vehicle.getIDList():
 					traci.vehicle.remove(str(i))
 			except:
 				pass
 			id_car = str(i)
-			offset = random.randint(10, 80)
+			offset = random.randint(30, 80)
 			traci.vehicle.addFull(id_car, 'adversary', depart=None, departPos=str((i-10)*95+offset), departSpeed='0', departLane='random', typeID='vType1')
 			traci.vehicle.setSpeedMode(id_car, int('00000',2))
 			traci.vehicle.setSpeed(id_car, 2)
 			traci.vehicle.setLaneChangeMode(id_car, 0)
 			traci.simulationStep()
-			i+=1'''
+			i+=1
 
 	def step(self, action):
 		done = True
@@ -113,7 +114,7 @@ class CustomEnv(Env):
 			self.reset()
 
 		traci.simulationStep()
-		info = {'time' : traci.simulation.getTime() - self.time_reset}
+		info = {'time' : traci.simulation.getTime() - self.time_reset, 'actions' : self.actions}
 
 		return self.state, reward, done, info
 
@@ -218,7 +219,8 @@ class CustomEnv(Env):
 			if overtake_complete != 0 and v == 0:
 				v = traci.vehicle.getSpeed(self.egoCarID)
 			reward = round(v * (is_inside + overtake_complete), 2)
-
+			'''if v < 4.5:
+				reward = 0'''
 			
 		self.total_reward += reward
 		if done:
@@ -273,10 +275,10 @@ class CustomEnv(Env):
 		return adver_same_line, adver_opposite_line
 
 	def _observation(self):
-		d_if=d_is=d_of=d_os= 0
-		v_if=v_of=v_is=v_os= 0
+		d_if=d_is=d_of = 0
+		v_if=v_of=v_is = 0
 		v_ego = 1
-		lane = 2
+		lane = -1
 		v_max = 6
 		self.state["adversaries"] = np.array([1] * self.obs_space_adver)
 		self.state["ego"] = np.array([self.obs_space_ego])
@@ -301,17 +303,30 @@ class CustomEnv(Env):
 			
 			for i in range(len(self.state["adversaries"])):
 				if self.state["adversaries"][i] != int(self.state["adversaries"][i]) and self.state["adversaries"][i] != 1.0 and self.state["adversaries"][i] != 0.0:
-					self.state["adversaries"][i] = round(self.state["adversaries"][i], 2)
+					self.state["adversaries"][i] = round(self.state["adversaries"][i], 1)
 
-			#print(self.state["adversaries"])
-			if traci.vehicle.getLaneID(self.egoCarID) == "E0_0":
+			
+			if self.egoCarID in traci.vehicle.getIDList():
 				lane = 1
-			v_ego = traci.vehicle.getSpeed(self.egoCarID) / v_max
+				if traci.vehicle.getLaneID(self.egoCarID) == "E0_0":
+					lane = 2
+			v_ego = round(traci.vehicle.getSpeed(self.egoCarID) / v_max, 2)
 			self.state["ego"] = np.array([lane, v_ego])
 
 		return self.state
 
 	def _action(self, action):
+		'''if action <= 0.33:
+			action = 0
+		elif action <= 0.66:
+			action = 1
+		else:
+			action = 2'''
+		if self.prev_action == -1 or (self.prev_action != action and action != 1):
+			self.actions = self.actions + 1
+			self.prev_action = action
+	
+
 		if action == 0 :#right
 			traci.vehicle.changeLaneRelative(self.egoCarID, -1, 0)
 		elif action == 1:
@@ -324,7 +339,6 @@ class CustomEnv(Env):
 		if self.egoCarID in traci.simulation.getCollidingVehiclesIDList():
 			self.collision = 1
 		pass
-
 
 
 

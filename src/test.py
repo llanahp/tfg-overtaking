@@ -6,17 +6,19 @@ from stable_baselines3 import PPO, DDPG, A2C, SAC, DQN
 from sb3_contrib import RecurrentPPO, TRPO
 import importlib
 
-def displayResults(success, collision, timeout, t, episodes):
+def displayResults(success, collision, timeout, t, episodes, action):
 	t = t/episodes
 	success = success/episodes
 	collision = collision/episodes
 	timeout = timeout/episodes
+	actions = action/episodes
 	print("\n-----------------------------")
 	print("Results:")
 	print("\n-----------------------------")
 	print("percentage success: ",success)
 	print("percentage collision: ",collision)
 	print("percentage timeout: ",timeout)
+	print("average actions: ", actions)
 	print("time", t)
 	print("-----------------------------\n")
 
@@ -127,6 +129,7 @@ def testAgent(env, args, model, episodes):
 	collision = 0
 	timeout = 0
 	t = 0
+	actions = 0
 
 	for episode in range(1, episodes+1):
 		obs = env.reset()
@@ -134,7 +137,7 @@ def testAgent(env, args, model, episodes):
 		score = 0
 
 		while not done:
-			action = 2 #random.randint(0, 2)
+			action = 0 #random.randint(0, 2)
 			if args.eval == "False":
 				action, _ = model.predict(obs)
 			if (args.verbose == "True"):
@@ -143,7 +146,7 @@ def testAgent(env, args, model, episodes):
 			obs, reward, done, info = env.step(action)
 			score += reward
 		
-		t = t + info['time']
+		t += info['time']
 		
 		if(score >= 0):
 			success +=1 
@@ -157,7 +160,8 @@ def testAgent(env, args, model, episodes):
 			timeout +=1
 			if (args.verbose == "True"):
 				print("Episode: ", episode, " -- timeout --")
-	return success, collision, timeout, t
+		actions += info['actions']
+	return success, collision, timeout, t, actions
 
 def main():
 	args = setUpArgs()
@@ -175,8 +179,8 @@ def main():
 		model = defineModel(args, env)
 
 	episodes = 20
-	success, collision, timeout, t = testAgent(env, args, model, episodes)
-	displayResults(success, collision, timeout, t, episodes)
+	success, collision, timeout, t, actions= testAgent(env, args, model, episodes)
+	displayResults(success, collision, timeout, t, episodes, actions)
 
 if __name__ == "__main__":
 	main()
