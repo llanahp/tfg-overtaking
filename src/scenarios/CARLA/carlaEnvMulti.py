@@ -11,6 +11,7 @@ import time
 import math 
 
 # Imports Prediction Modules
+#from scenarios.SMARTS.prediction.predictions_utils import Motion_Predictor
 
 # Import CARLA
 import carla
@@ -22,11 +23,11 @@ from geometry_msgs.msg import Quaternion
 from t4ac_msgs.msg import CarControl
 
 class CustomEnv(Env):
-    def __init__(self, render=False):
+    def __init__(self, render=True):
         self.N_actions = 2
         self.action_space = Discrete(self.N_actions)
         self.n_features = 2
-        self.n_vehicles = 11
+        self.n_vehicles =  11
         self.n_states = 4
         self.n_obs = 50
 
@@ -40,12 +41,15 @@ class CustomEnv(Env):
                                        'vehicle G':Box(0,1,shape=(self.n_states, self.n_features)), \
                                        'vehicle H':Box(0,1,shape=(self.n_states, self.n_features)), \
                                        'vehicle I':Box(0,1,shape=(self.n_states, self.n_features)), \
-                                       'vehicle J':Box(0,1,shape=(self.n_states, self.n_features))})
+                                       'vehicle J':Box(0,1,shape=(self.n_states, self.n_features))
+                                       })
 
         self.list_of_keys = [key for key in self.observation_space.keys()]
         self.empty = self.observation_space.sample()
         self.list_of_ids = {}
 
+
+        # Define number of vehicles
         for num_adv in range(self.n_vehicles):
             current_adv = self.list_of_keys[num_adv]
             self.empty[current_adv] = np.zeros((self.n_states, self.n_features))
@@ -61,11 +65,12 @@ class CustomEnv(Env):
         self.adversaries_keys = dict()
         self.adversaries_id_cnt = 1
 
-        self.write_csv = False
-        self.predict = True
+        #self.write_csv = False
+        #self.predict = True
 
+    # This function is called every time we take a step in the environment
+    # It sends the action to the CARLA simulator and returns the new state
     def localization_pub(self):
-
         localization_msg = Odometry()
         localization_msg.header.frame_id="map"
         localization_msg.header.stamp = rospy.Time.now()
@@ -92,6 +97,9 @@ class CustomEnv(Env):
 
         return ros_quaternion
 
+
+    #TODO Intentar quitar esto y que lo controle el simulador (Carla)
+    # This function is used to control the ego vehicle (throttle, steer, brake)
     def control_cb(self, cmd_vel):
         self.actual_speed = math.sqrt(pow(self.ego_vehicle.get_velocity().x,2)+pow(self.ego_vehicle.get_velocity().y,2))
         errorSpeed = cmd_vel.velocity - self.actual_speed #distance away from setpoint
@@ -113,10 +121,12 @@ class CustomEnv(Env):
         if (throttle > 1):
             throttle = 1
 
+        # Apply control
         if self.action == 1 and self.init:
             self.ego_vehicle.apply_control(carla.VehicleControl(throttle=throttle, steer=-cmd_vel.steer, brake=brake))
             # self.ego_vehicle.apply_control(carla.VehicleControl(throttle=0.6, steer=0, brake=0))
             self.force_action = True
+        # Apply brake
         elif self.action == 0 and self.init:
             self.ego_vehicle.apply_control(carla.VehicleControl(throttle=0, steer=0, brake=1))
 
@@ -145,7 +155,7 @@ class CustomEnv(Env):
                 self.localization_pub()
                 done, reward = self._reward(action)
 
-        info = {'time' : time.time() - self.time_reset}
+        info = {'time' : time.time() - self.time_reset, 'actions' : self.action}
         time.sleep(0.05)
 
         return state, reward, done, info
@@ -157,7 +167,13 @@ class CustomEnv(Env):
         self.action = 0
 
         settings = self.world.get_settings()
-        settings.synchronous_mode = False
+        #TODO Antes estaba solo la siguiente linea 
+        #settings.synchronous_mode = False
+
+        settings.synchronous_mode = True
+        settings.fixed_delta_seconds = 0.05  # Tiempo entre cada paso de la simulación en segundos
+
+
         self.world.apply_settings(settings)
 
         tm = self.client.get_trafficmanager(8000)
@@ -166,16 +182,18 @@ class CustomEnv(Env):
 
         actors = self.world.get_actors().filter('vehicle.*.*')
 
+        # Destroy all actors except the ego vehicle
         for _, actor in enumerate(actors):
             if(actor.id != self.ego_vehicle.id):
                 actor.destroy()
 
-        # Adversaries
+        # Adversaries random spawn and routes
         routes = ["Right", "Straight", "Left"]
         route = [choice(routes)]
+        n_vehicles = 2
+        # From one side
         y = -134
         x = 20
-        n_vehicles = 2
         for _ in range(n_vehicles):
             x = x + 15
             adversary_transform = carla.Transform(carla.Location(x=x, y=y, z=8), carla.Rotation(yaw=0))
@@ -187,6 +205,8 @@ class CustomEnv(Env):
                 tm.ignore_lights_percentage(actor,100)
                 tm.distance_to_leading_vehicle(actor,10)
                 tm.set_route(actor, route)
+        
+        # From one side
         y = -135.5
         x = 130
         for _ in range(n_vehicles):
@@ -201,6 +221,7 @@ class CustomEnv(Env):
                 tm.distance_to_leading_vehicle(actor,10)
                 tm.set_route(actor, route)
 
+        # Ego vehicle spawn
         self.ego_vehicle.set_transform(carla.Transform(carla.Location(x=84, y=-85, z=8), carla.Rotation(yaw=270)))
 
         # Reward parametres init
@@ -219,22 +240,20 @@ class CustomEnv(Env):
         self.adversaries_keys.clear()
         self.adversaries_id_cnt = 1
 
-        self._reach_intersection()
+        #self._reach_intersection()
 
         self.init = True
-
         state = self._obs()
-
         return state
 
     def _reward(self, action):
         done = False
-        timeout = 20
-        time_diff = time.time() - self.time_reset
-        rt = 0
-        v = math.sqrt(pow(self.ego_vehicle.get_velocity().x,2) + pow(self.ego_vehicle.get_velocity().y,2))
+        # Elapsed time
+        time_elapse = time.time() - self.time_reset
 
-        if  time_diff > timeout:
+        timeout = 30 #20
+
+        if  time_elapse > timeout:
             self.timeout = 1
             done = True
             print("-------- timeout! --------")
@@ -250,6 +269,13 @@ class CustomEnv(Env):
             done = True
             print("-------- collision! --------")
             print(self.ego_vehicle.get_transform().location.x,self.ego_vehicle.get_transform().location.y)
+        
+        # TODO: reward function
+        '''
+
+        rt = 0
+        v = math.sqrt(pow(self.ego_vehicle.get_velocity().x,2) + pow(self.ego_vehicle.get_velocity().y,2))
+
 
         ks = 1
         kc = -2
@@ -261,8 +287,8 @@ class CustomEnv(Env):
                  kc * self.collision + \
                  kv * v + \
                  rt - \
-                 0.001
-                 
+                 0.001'''
+        reward = 0      
 
         return done, reward
     
@@ -326,7 +352,7 @@ class CustomEnv(Env):
         '''
         return state
 
-    def _reach_intersection(self):
+    '''def _reach_intersection(self):
         
         while(self.ego_vehicle.get_transform().location.y + 134 > 20):
             state = self._obs()
@@ -342,22 +368,39 @@ class CustomEnv(Env):
             self.world.tick()
             self.localization_pub()
             i += 1
-            time.sleep(0.05)
+            time.sleep(0.05)'''
+
+
+
+    def vehicle_in_range(self, adversary):
+        if math.sqrt(pow(self.ego_vehicle.get_transform().location.x - adversary.get_transform().location.x ,2) + 
+                     pow(self.ego_vehicle.get_transform().location.y - adversary.get_transform().location.y ,2)) < self.range:
+                     return True; return False 
+
 
     def _run_carla(self):
         # Carla Config
         os.system('cd ~/carla/PythonAPI/util/ && python3 config.py -m Town03')
         self.client = carla.Client("localhost", 2000)
-        self.client.set_timeout(2.0)
+        self.client.set_timeout(2.0) # Timeout for network operations
         self.world = self.client.get_world()
+
         world_transform = carla.Transform(carla.Location(x=84, y=-115, z=150), carla.Rotation(yaw=180, pitch = -90))
         self.world.get_spectator().set_transform(world_transform)
         self.map = self.world.get_map()
         blueprint_library = self.world.get_blueprint_library()
         self.adversary_bp = blueprint_library.find('vehicle.tesla.model3')
 
-        weather = carla.WeatherParameters(sun_altitude_angle=90.0)
 
+        # Remove buildings
+        settings = self.world.get_settings()
+        settings.world.unload_map_layer(carla.MapLayer.Props) 
+        self.world.apply_settings(settings)
+
+
+
+        # Set Weather
+        weather = carla.WeatherParameters(sun_altitude_angle=90.0)
         self.world.set_weather(weather)
 
         if self.render == False:
@@ -365,21 +408,29 @@ class CustomEnv(Env):
             self.world.apply_settings(settings)
             settings.no_rendering_mode = True
             self.world.apply_settings(settings)
+            
 
+        # Destroy all actors 
         actors = self.world.get_actors().filter('vehicle.*.*')
         for _, actor in enumerate(actors):
                 actor.destroy()
 
         # Ego vehicle
+        #------------------------------
         ego_vehicle_bp = choice(blueprint_library.filter('vehicle.audi.a2'))
+        #Spawn point ego vehicle
         ego_vehicle_transform = carla.Transform(carla.Location(x=84, y=-85, z=10), carla.Rotation(yaw=270))
         self.ego_vehicle = self.world.spawn_actor(ego_vehicle_bp,ego_vehicle_transform)
+        # Start ego vehicle
         self.ego_vehicle.apply_control(carla.VehicleControl(throttle=0, steer=0, brake=1))
+        # Attach collision sensor to ego vehicle
         self.collision_sensor = self.world.spawn_actor(blueprint_library.find('sensor.other.collision'),
                                         carla.Transform(), attach_to=self.ego_vehicle)
+        # Attach callback to collision sensor
         self.collision_sensor.listen(lambda event: self.function_handler(event))
-
-        # Control PI
+        #------------------------------
+        
+        # Control PI, (throttle, steer, brake)
         self.init = False
         self.Kp = 0.15
         self.Ki = 0.002
@@ -401,11 +452,10 @@ class CustomEnv(Env):
         os.system('roslaunch t4ac_global_planner_ros planning.launch map_name:=Town03 &') 
         os.system('roslaunch t4ac_map_monitor_ros mapping.launch map_name:=Town03 &')         
         os.system('roslaunch t4ac_lqr_ros t4ac_lqr_ros.launch &')
+        #os.system('rviz &')  # Start rviz
         time.sleep(10)
         self.localization_pub()
         os.system('./start.sh')
 
-    def vehicle_in_range(self, adversary):
-        if math.sqrt(pow(self.ego_vehicle.get_transform().location.x - adversary.get_transform().location.x ,2) + 
-                     pow(self.ego_vehicle.get_transform().location.y - adversary.get_transform().location.y ,2)) < self.range:
-                     return True; return False 
+
+        
