@@ -63,23 +63,16 @@ def setUpArgs():
 	return argparser.parse_args()
 
 def createEnviroment(args):
-	# --env=SOMETHING
 	diccionario = {
-    "Intersection": "scenarios.Intersection.IntersectionSumoEnv",
-    "IntersectionFeaturesOne": "scenarios.Intersection.IntersectionSumoEnvFeaturesOneState",
-    "IntersectionFeaturesMulti": "scenarios.Intersection.IntersectionSumoEnvFeaturesMultiState",
-    "IntersectionCarlaFeaturesOne": "scenarios.Intersection.IntersectionCarlaEnvFeaturesOneState",
-    "IntersectionCarlaFeaturesMulti": "scenarios.Intersection.IntersectionCarlaEnvFeaturesMultiState",
-    "Highway": "scenarios.Highway.HighwaySumoEnvFeatures",
-    "IntersectionRecurrent": "scenarios.Intersection.IntersectionSumoEnvFeaturesMultiState",
-    "SMARTS": "scenarios.SMARTS.smartsEnv",
-    "MultiSMARTS": "scenarios.SMARTS.smartsEnvMulti",
-    "TransformersSMARTS": "scenarios.SMARTS.smartsEnvTransformers",
     "MultiCARLA": "scenarios.CARLA.carlaEnvMulti",
-    "overtaking": "scenarios.overtaking.IntersectionSumoEnvFeaturesOneState",
+	"overtaking": "scenarios.overtaking.IntersectionSumoEnvFeaturesOneState",
 	"overtakingLine": "scenarios.overtakingLine.IntersectionSumoEnvFeaturesOneState",
 	"overtakingOneLine": "scenarios.overtakingOneLine.overtakingOneLine",
-	}
+	"overtakingOneLineSac": "scenarios.overtakingOneLine.overtakingOneLineSac",
+	"overtakingOneLinePPO": "scenarios.overtakingOneLine.overtakingOneLinePPO",
+	"Highway": "scenarios.Highway.HighwaySumoEnvFeatures",
+	"HighwaySac": "scenarios.Highway.HighwaySumoEnvFeaturesSac",
+    }
 
 	if args.env in diccionario:
 		# Import the env and hide the output (Zen of Python)
@@ -92,9 +85,8 @@ def createEnviroment(args):
 		print("Env not found")
 
 
-	env = CustomEnv(render=True)
-	if args.render == "False":
-		env = CustomEnv(render=False)
+	env = CustomEnv(render = (args.render == "True"))
+
 	return env
 
 def defineModel(args, env):

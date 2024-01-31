@@ -148,6 +148,12 @@ class CustomEnv(Env):
         state = self._obs()
         done, reward = self._reward(action)
 
+        '''
+        cmd_vel = CarControl()
+        cmd_vel.velocity = 10
+        cmd_vel.steer = 0
+        self.control_cb(cmd_vel)'''
+
         if self.force_action:
             while not done:
                 self.action = 1
@@ -188,6 +194,7 @@ class CustomEnv(Env):
                 actor.destroy()
 
         # Adversaries random spawn and routes
+        
         routes = ["Right", "Straight", "Left"]
         route = [choice(routes)]
         n_vehicles = 2
@@ -220,6 +227,7 @@ class CustomEnv(Env):
                 tm.ignore_lights_percentage(actor,100)
                 tm.distance_to_leading_vehicle(actor,10)
                 tm.set_route(actor, route)
+        
 
         # Ego vehicle spawn
         self.ego_vehicle.set_transform(carla.Transform(carla.Location(x=84, y=-85, z=8), carla.Rotation(yaw=270)))
@@ -380,7 +388,7 @@ class CustomEnv(Env):
 
     def _run_carla(self):
         # Carla Config
-        os.system('cd ~/carla/PythonAPI/util/ && python3 config.py -m Town03')
+        os.system('cd ~/carla/PythonAPI/util/ && python3 config.py -m Town03')# -quality-level=Low')
         self.client = carla.Client("localhost", 2000)
         self.client.set_timeout(2.0) # Timeout for network operations
         self.world = self.client.get_world()
@@ -392,10 +400,7 @@ class CustomEnv(Env):
         self.adversary_bp = blueprint_library.find('vehicle.tesla.model3')
 
 
-        # Remove buildings
-        settings = self.world.get_settings()
-        settings.world.unload_map_layer(carla.MapLayer.Props) 
-        self.world.apply_settings(settings)
+      
 
 
 
@@ -408,7 +413,9 @@ class CustomEnv(Env):
             self.world.apply_settings(settings)
             settings.no_rendering_mode = True
             self.world.apply_settings(settings)
-            
+        
+        #self.world.unload_map_layer(carla.MapLayer.Buildings)
+       
 
         # Destroy all actors 
         actors = self.world.get_actors().filter('vehicle.*.*')
@@ -418,9 +425,9 @@ class CustomEnv(Env):
         # Ego vehicle
         #------------------------------
         ego_vehicle_bp = choice(blueprint_library.filter('vehicle.audi.a2'))
-        #Spawn point ego vehicle
+        #Create and spawn point ego vehicle
         ego_vehicle_transform = carla.Transform(carla.Location(x=84, y=-85, z=10), carla.Rotation(yaw=270))
-        self.ego_vehicle = self.world.spawn_actor(ego_vehicle_bp,ego_vehicle_transform)
+        self.ego_vehicle = self.world.spawn_actor(ego_vehicle_bp, ego_vehicle_transform)
         # Start ego vehicle
         self.ego_vehicle.apply_control(carla.VehicleControl(throttle=0, steer=0, brake=1))
         # Attach collision sensor to ego vehicle

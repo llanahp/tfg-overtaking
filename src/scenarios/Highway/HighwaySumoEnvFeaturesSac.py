@@ -25,7 +25,7 @@ import traci
 
 class CustomEnv(Env):
 	def __init__(self, render=False):
-		self.action_space = Discrete(3) #Box(low=0, high=1, shape=(1,))
+		self.action_space = Box(low=0, high=1, shape=(1,))
 		self.obs_space_ego = 2
 		self.obs_space_adver = 6
 		self.max_range = 100
@@ -303,12 +303,12 @@ class CustomEnv(Env):
 
 	def _action(self, action):
 		
-		'''if action <= 0.33:
+		if action <= 0.33:
 			action = 0
 		elif action <= 0.66:
 			action = 1
 		else:
-			action = 2'''
+			action = 2
 		if self.prev_action == -1 or (self.prev_action != action and action != 1):
 			self.actions = self.actions + 1
 			self.prev_action = action
