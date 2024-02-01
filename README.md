@@ -47,3 +47,6 @@ ls -lta Training/Models/
     ```bash
     python3 test.py --env=overtakingLine --model=DQN --scenario='2023-11-30 18:34:55.556011'
     ```
+
+
+https://opalescent-berry-180.notion.site/TFG-a28e3eb61a74451b8a41e2f7a5a4a2a0?pvs=4
